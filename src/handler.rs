@@ -49,7 +49,7 @@ pub trait Handler {
 /// handler.report_and_drain(Box::new(diagnostic));
 /// ```
 ///
-/// To abort upon draining an error diagnostic, use the [`exit_on_error`] method:
+/// To abort upon draining an error diagnostic, use the [`DiagnosticHandler::exit_on_error()`] method:
 ///
 /// ```
 /// use error_snippet::handler::DiagnosticHandler;

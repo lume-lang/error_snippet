@@ -503,9 +503,11 @@ impl GraphicalRenderer {
 
     /// Renders a single label without any header or footer attached.
     ///
+    /// ```text
     ///  28 │    /// When creating an array with a set capacity, it's length will still be zero.
     ///  29 │    pub fn with_capacity(capacity: UInt64) -> Array<T> {
     ///     │                                              ^^^^^^^^ expected type `Array<T>` found here
+    /// ```
     fn render_label(
         &self,
         f: &mut impl std::fmt::Write,
