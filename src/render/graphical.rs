@@ -5,6 +5,8 @@ use crate::{render::Renderer, Diagnostic, Help, Label, Severity, Source, Suggest
 use indexmap::IndexMap;
 use owo_colors::{OwoColorize, Style, Styled};
 
+use super::Formatter;
+
 const DEFAULT_TERM_WIDTH: usize = 80;
 
 #[derive(Debug, Clone)]
@@ -217,9 +219,9 @@ impl Default for GraphicalRenderer {
 }
 
 impl Renderer for GraphicalRenderer {
-    fn render_fmt<'a>(
+    fn render_fmt(
         &mut self,
-        f: &mut impl std::fmt::Write,
+        f: &mut Formatter<'_>,
         diagnostic: &dyn Diagnostic,
     ) -> std::fmt::Result {
         self.render_diagnostic(f, diagnostic)

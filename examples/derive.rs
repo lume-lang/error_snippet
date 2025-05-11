@@ -31,5 +31,5 @@ fn main() {
     };
 
     let mut renderer = GraphicalRenderer::new();
-    println!("{}", renderer.render(&error));
+    renderer.render_stderr(&error).unwrap();
 }

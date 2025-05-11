@@ -68,5 +68,5 @@ class builtin Array<T>
         );
 
     let mut renderer = GraphicalRenderer::new();
-    println!("{}", renderer.render(&message));
+    renderer.render_stderr(&message).unwrap();
 }
