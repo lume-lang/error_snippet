@@ -1,0 +1,11 @@
+---
+source: tests/renderer/graphical.rs
+expression: render(message)
+---
+× error: mismatched types
+   ╭───────────
+ 1 │ let a = 1;
+ 2 │ let b = 2;
+   │     ^^^^^ labelled message
+ 3 │ let c = a + b;
+   ╰──

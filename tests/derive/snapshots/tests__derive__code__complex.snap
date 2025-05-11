@@ -1,0 +1,5 @@
+---
+source: tests/derive/code.rs
+expression: "render(Foo {})"
+---
+× error[some::obtuse::code]: some error

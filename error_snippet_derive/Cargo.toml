@@ -1,0 +1,20 @@
+[package]
+name = "error_snippet_derive"
+version = "0.1.0"
+authors = ["Max T. Kristiansen <me@maxtrier.dk>"]
+description = "Derive macros for `error_snippet`."
+repository = "https://github.com/maxnatamo/error_snippet"
+license = "MIT"
+edition = "2018"
+rust-version = "1.85.0"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.83"
+quote = "1.0.35"
+syn = "2.0.87"
+
+[dev-dependencies]
+insta = "=1.43.1"

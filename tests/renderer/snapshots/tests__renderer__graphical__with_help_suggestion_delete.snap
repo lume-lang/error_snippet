@@ -1,0 +1,9 @@
+---
+source: tests/renderer/graphical.rs
+assertion_line: 319
+expression: render(message)
+---
+× error: unnecessary cast
+   help: remove unnecessary cast here
+ 2 │     return false as Boolean;
+   │                 ^^^^^^^^^^^

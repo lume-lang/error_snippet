@@ -1,0 +1,5 @@
+---
+source: tests/derive/code.rs
+expression: "render(Foo {})"
+---
+× error[E3404]: some error

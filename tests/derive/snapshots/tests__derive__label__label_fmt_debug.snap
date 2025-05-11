@@ -1,0 +1,10 @@
+---
+source: tests/derive/label.rs
+expression: "render(Foo { source, span: 13..17, name: \"void\" })"
+---
+× error: foo
+   ╭─[some_file.lm:1:14]
+ 1 │ fn main() -> void {
+   │              ^^^^ type not allowed: "void"
+ 2 │     return 0;
+   ╰──

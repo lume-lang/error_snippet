@@ -1,0 +1,5 @@
+---
+source: tests/derive/code.rs
+expression: "render(Foo { code: 3404 })"
+---
+× error[E{code}]: some error

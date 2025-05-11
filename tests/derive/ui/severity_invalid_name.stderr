@@ -1,0 +1,5 @@
+error[E0599]: no variant or associated item named `Bug` found for enum `Severity` in the current scope
+ --> tests/derive/ui/severity_invalid_name.rs:4:48
+  |
+4 | #[diagnostic(message = "some help", severity = Bug)]
+  |                                                ^^^ variant or associated item not found in `Severity`

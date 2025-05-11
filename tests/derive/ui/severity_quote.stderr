@@ -1,0 +1,5 @@
+error: Expected path literal
+ --> tests/derive/ui/severity_quote.rs:4:37
+  |
+4 | #[diagnostic(message = "some help", severity = "Warning")]
+  |                                     ^^^^^^^^^^^^^^^^^^^^

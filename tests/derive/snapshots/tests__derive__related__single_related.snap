@@ -1,0 +1,6 @@
+---
+source: tests/derive/related.rs
+expression: "render(Parent { children: vec![Child {}] })"
+---
+× error: parent error
+      × error: child error

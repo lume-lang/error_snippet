@@ -1,0 +1,6 @@
+---
+source: tests/renderer/graphical.rs
+expression: render(message)
+---
+× error: could not compile
+      × error: failed to read file

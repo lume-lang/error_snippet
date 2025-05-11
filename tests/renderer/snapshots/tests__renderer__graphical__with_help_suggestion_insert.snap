@@ -1,0 +1,9 @@
+---
+source: tests/renderer/graphical.rs
+assertion_line: 357
+expression: render(message)
+---
+× error: mismatched types
+   help: cast the value `0` to a `Boolean`
+ 2 │     return 0 as Boolean;
+   │             ^^^^^^^^^^^

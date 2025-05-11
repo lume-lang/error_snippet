@@ -1,0 +1,7 @@
+---
+source: tests/renderer/graphical.rs
+expression: render(message)
+---
+× error: mismatched types
+   help: did you check your syntax?
+   help: it would really help if you did...

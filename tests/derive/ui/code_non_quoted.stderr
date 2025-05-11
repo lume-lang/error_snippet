@@ -1,0 +1,5 @@
+error: Expected string literal
+ --> tests/derive/ui/code_non_quoted.rs:4:37
+  |
+4 | #[diagnostic(message = "some help", code = E5132)]
+  |                                     ^^^^^^^^^^^^

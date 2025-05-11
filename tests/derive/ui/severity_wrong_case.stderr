@@ -1,0 +1,11 @@
+error[E0599]: no variant or associated item named `help` found for enum `Severity` in the current scope
+ --> tests/derive/ui/severity_wrong_case.rs:4:48
+  |
+4 | #[diagnostic(message = "some help", severity = help)]
+  |                                                ^^^^ variant or associated item not found in `Severity`
+  |
+help: there is a variant with a similar name
+  |
+4 - #[diagnostic(message = "some help", severity = help)]
+4 + #[diagnostic(message = "some help", severity = Help)]
+  |

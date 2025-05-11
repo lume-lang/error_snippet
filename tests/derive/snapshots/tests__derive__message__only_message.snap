@@ -1,0 +1,5 @@
+---
+source: tests/derive/message.rs
+expression: "render(Foo {})"
+---
+× error: some error

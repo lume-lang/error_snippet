@@ -1,0 +1,15 @@
+---
+source: tests/derive/label.rs
+expression: "render(Foo { source, span1: 13..17, span2: 24..30, })"
+---
+× error: foo
+   ╭─[some_file.lm:1:14]
+ 1 │ fn main() -> void {
+   │              ^^^^ label 1 here
+ 2 │     return 0;
+   ∶ 
+ 1 │ fn main() -> void {
+ 2 │     return 0;
+   │     ^^^^^^ label 2 here
+ 3 │ }
+   ╰──

@@ -1,0 +1,5 @@
+error: expected name-value attribute, such as `#[attr = "..."]`
+ --> tests/derive/ui/severity_parenthesis.rs:4:3
+  |
+4 | #[diagnostic(message = "some help", severity(Warning))]
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

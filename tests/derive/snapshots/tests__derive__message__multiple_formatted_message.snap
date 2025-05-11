@@ -1,0 +1,5 @@
+---
+source: tests/derive/message.rs
+expression: "render(Foo { name1: \"foo\", name2: \"bar\", })"
+---
+× error: foo bar

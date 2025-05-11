@@ -1,0 +1,9 @@
+---
+source: tests/renderer/graphical.rs
+assertion_line: 338
+expression: render(message)
+---
+× error: invalid value
+   help: did you mean `false`?
+ 2 │     return false;
+   │            ^^^^^

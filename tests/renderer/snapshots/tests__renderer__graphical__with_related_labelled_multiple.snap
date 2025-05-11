@@ -1,0 +1,21 @@
+---
+source: tests/renderer/graphical.rs
+assertion_line: 123
+expression: render(message)
+---
+× error: could not compile
+      × error: failed to read file
+         ╭─[src/test.lm:2:5]
+       1 │ let a = 1;
+       2 │ let b = 2;
+         │     ^^^^^ labelled message 1
+       3 │ let c = a + b;
+         ╰──
+
+      × error: permission denied
+         ╭─[src/test.lm:3:9]
+       2 │ let b = 2;
+       3 │ let c = a + b;
+         │         ^^^^^ labelled message 2
+       4 │ let d = c * 2;
+         ╰──

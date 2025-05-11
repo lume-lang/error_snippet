@@ -1,0 +1,12 @@
+---
+source: tests/renderer/graphical.rs
+expression: render(message)
+---
+× error: could not compile
+      × error: failed to read file
+         ╭─[src/test.lm:2:5]
+       1 │ let a = 1;
+       2 │ let b = 2;
+         │     ^^^^^ labelled message
+       3 │ let c = a + b;
+         ╰──

@@ -1,0 +1,17 @@
+---
+source: tests/renderer/graphical.rs
+expression: render(message)
+---
+× error: mismatched types
+   ╭─[src/file1.lm:2:5]
+ 1 │ let a = 1;
+ 2 │ let b = 2;
+   │     ^^^^^ labelled message 1
+ 3 │ let c = a + b;
+   ╰──
+   ╭─[src/file2.lm:3:9]
+ 2 │ let g = 2;
+ 3 │ let h = a + b;
+   │         ^^^^^ labelled message 2
+ 4 │ let i = c * 2;
+   ╰──

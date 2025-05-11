@@ -1,0 +1,6 @@
+---
+source: tests/derive/help.rs
+expression: "render(Foo {})"
+---
+× error: foo
+   help: better luck next time!

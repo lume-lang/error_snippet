@@ -1,0 +1,5 @@
+---
+source: tests/derive/severity.rs
+expression: "render(Foo {})"
+---
+☞ info: some info

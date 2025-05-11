@@ -1,0 +1,8 @@
+---
+source: tests/derive/message.rs
+expression: "render(Foo { name: &[\"bar\", \"baz\"] })"
+---
+× error: foo [
+    "bar",
+    "baz",
+]

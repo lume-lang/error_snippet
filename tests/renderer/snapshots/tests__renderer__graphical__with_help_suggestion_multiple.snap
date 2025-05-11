@@ -1,0 +1,8 @@
+---
+source: tests/renderer/graphical.rs
+expression: render(message)
+---
+× error: unnecessary parenthesis
+   help: remove unnecessary parenthesis here
+ 2 │     return (false);
+   │            ^     ^
