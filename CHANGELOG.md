@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.1...error_snippet-v0.1.2) - 2025-05-11
+
+### Fixed
+
+- fix!(derive): use dynamic errors for #[related]
+
 ## [0.1.1](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.0...error_snippet-v0.1.1) - 2025-05-11
 
 ### Other
