@@ -44,7 +44,7 @@ dependencies = [
 
 [[package]]
 name = "error_snippet"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "error_snippet_derive",
  "indexmap",
@@ -56,7 +56,7 @@ dependencies = [
 
 [[package]]
 name = "error_snippet_derive"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "insta",
  "proc-macro2",
