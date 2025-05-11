@@ -16,11 +16,11 @@ fn single_related() {
     #[diagnostic(message = "parent error")]
     struct Parent {
         #[related]
-        pub children: Vec<Child>,
+        pub children: Vec<error_snippet::Error>,
     }
 
     assert_snapshot!(render(Parent {
-        children: vec![Child {}]
+        children: vec![Child {}.into()]
     }));
 }
 
@@ -34,11 +34,11 @@ fn multiple_related() {
     #[diagnostic(message = "parent error")]
     struct Parent {
         #[related]
-        pub children: Vec<Child>,
+        pub children: Vec<error_snippet::Error>,
     }
 
     assert_snapshot!(render(Parent {
-        children: vec![Child {}, Child {}]
+        children: vec![Child {}.into(), Child {}.into()]
     }));
 }
 
@@ -58,7 +58,7 @@ fn related_with_source() {
     #[diagnostic(message = "parent error")]
     struct Parent {
         #[related]
-        pub children: Vec<Child>,
+        pub children: Vec<error_snippet::Error>,
     }
 
     let source = Arc::new(NamedSource::new(
@@ -73,7 +73,8 @@ fn related_with_source() {
         children: vec![Child {
             source,
             span: 13..17
-        }]
+        }
+        .into()]
     }));
 }
 
@@ -93,7 +94,7 @@ fn multiple_related_with_source() {
     #[diagnostic(message = "parent error")]
     struct Parent {
         #[related]
-        pub children: Vec<Child>,
+        pub children: Vec<error_snippet::Error>,
     }
 
     let source = Arc::new(NamedSource::new(
@@ -109,11 +110,13 @@ fn multiple_related_with_source() {
             Child {
                 source: source.clone(),
                 span: 13..17
-            },
+            }
+            .into(),
             Child {
                 source: source.clone(),
                 span: 24..30
             }
+            .into()
         ]
     }));
 }

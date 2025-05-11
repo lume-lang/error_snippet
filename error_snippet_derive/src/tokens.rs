@@ -247,7 +247,7 @@ impl Diagnostic {
                 Box::new(
                     self.#related
                         .iter()
-                        .map(|e| e as &(dyn ::error_snippet::Diagnostic + Send + Sync)),
+                        .map(|e| e.as_ref() as &(dyn ::error_snippet::Diagnostic + Send + Sync)),
                 )
             }
         };
