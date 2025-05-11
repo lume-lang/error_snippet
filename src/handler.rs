@@ -100,7 +100,7 @@ impl Handler for DiagnosticHandler {
         let mut encountered_errors = 0usize;
 
         for diagnostic in &self.emitted_diagnostics {
-            self.renderer.render(diagnostic.as_ref())?;
+            self.renderer.render_stderr(diagnostic.as_ref())?;
 
             // If the diagnostic is an error, mark it down.
             if diagnostic.severity() == Severity::Error {
@@ -113,7 +113,7 @@ impl Handler for DiagnosticHandler {
             let message = format!("aborting due to {} previous errors", encountered_errors);
             let abort_diag = Box::new(SimpleDiagnostic::new(message));
 
-            self.renderer.render(abort_diag.as_ref())?;
+            self.renderer.render_stderr(abort_diag.as_ref())?;
 
             std::process::exit(1);
         }
