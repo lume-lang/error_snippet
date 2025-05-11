@@ -11,7 +11,7 @@ categories = [
     "parsing",
     "visualization",
 ]
-repository = "https://github.com/maxnatamo/error_snippet"
+repository = "https://github.com/lume-lang/error_snippet"
 license = "MIT"
 readme = "README.md"
 edition = "2018"

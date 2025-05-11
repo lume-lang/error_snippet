@@ -8,7 +8,7 @@ It let's you define your own error types using attributes, which makes the
 entire process very quick and maintainable. When rendered to the terminal,
 it will end up looking something like this:
 
-![Example view of how `error_snippet` renders diagnostics](./examples/source_slice.png)
+![Example view of how `error_snippet` renders diagnostics](https://raw.githubusercontent.com/lume-lang/error_snippet/main/examples/source_slice.png)
 
 ```rs
 use std::{ops::Range, sync::Arc};
