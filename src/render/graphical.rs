@@ -1022,7 +1022,7 @@ impl GraphicalRenderer {
 
         let formatted = match suggestion {
             Suggestion::Deletion { .. } => {
-                let [before, middle, after] = split_str_at(&line, [span.start, span.end]);
+                let [before, middle, after] = split_str_at(&line, vec![span.start, span.end]);
 
                 format!(
                     "{}{}{}",
@@ -1032,7 +1032,7 @@ impl GraphicalRenderer {
                 )
             }
             Suggestion::Insertion { value, .. } => {
-                let [before, middle, after] = split_str_at(&line, [span.start, span.end]);
+                let [before, middle, after] = split_str_at(&line, vec![span.start, span.end]);
 
                 format!(
                     "{}{}{}{}",
@@ -1044,7 +1044,7 @@ impl GraphicalRenderer {
             }
             Suggestion::Replacement { replacement, range } => {
                 let length = range.span.0.len();
-                let [before, _, after] = split_str_at(&line, [span.start, span.start + length]);
+                let [before, _, after] = split_str_at(&line, vec![span.start, span.start + length]);
 
                 format!(
                     "{}{}{}",
@@ -1079,7 +1079,7 @@ fn terminal_width() -> usize {
 
 /// Splits the given string into `N` slices, where each index defines
 /// where the source string should be split.
-fn split_str_at<const N: usize>(str: &str, mut indices: [usize; N - 1]) -> [&str; N] {
+fn split_str_at<const N: usize>(str: &str, mut indices: Vec<usize>) -> [&str; N] {
     indices.sort();
     indices.reverse();
 

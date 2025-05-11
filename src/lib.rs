@@ -1,6 +1,3 @@
-#![allow(incomplete_features)]
-#![feature(generic_const_exprs)]
-
 use std::{fmt::Display, ops::Range, sync::Arc};
 
 pub mod handler;
