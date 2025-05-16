@@ -1,4 +1,46 @@
-use crate::{Diagnostic, Renderer, Severity, SimpleDiagnostic};
+use crate::{Diagnostic, Renderer, Severity};
+
+/// Represents an error which can occur when draining errors
+/// from the [`DiagnosticHandler::drain()`] and [`DiagnosticHandler::report_and_drain`].
+pub enum DrainError {
+    /// Defines that the error occured when attempting to write
+    /// the diagnostic to the output buffer.
+    Fmt(std::fmt::Error),
+
+    /// Defines that one-or-more errors were reported during the drain,
+    /// which are not propogating upwards to the calling function.
+    ///
+    /// The variant defines the number of errors which were reported. Note that
+    /// this number does *not* include non-errors such as warnings, nor does
+    /// it count any sub-diagnostics, such as labels or related errors.
+    CompoundError(usize),
+}
+
+impl From<std::fmt::Error> for DrainError {
+    fn from(err: std::fmt::Error) -> Self {
+        Self::Fmt(err)
+    }
+}
+
+impl std::error::Error for DrainError {}
+
+impl std::fmt::Debug for DrainError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Fmt(e) => e.fmt(f),
+            Self::CompoundError(cnt) => f.debug_tuple("CompoundError").field(cnt).finish(),
+        }
+    }
+}
+
+impl std::fmt::Display for DrainError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Fmt(e) => e.fmt(f),
+            Self::CompoundError(cnt) => write!(f, "aborting due to {} previous errors", cnt),
+        }
+    }
+}
 
 /// Abstract handler type for reporting diagnostics.
 ///
@@ -9,11 +51,11 @@ pub trait Handler {
     fn report(&mut self, diagnostic: Box<dyn Diagnostic>);
 
     /// Drains all the diagnostics to the console and empties the local store.
-    fn drain(&mut self) -> std::fmt::Result;
+    fn drain(&mut self) -> Result<(), DrainError>;
 
     /// Reports the diagnostic to the handler and emits it immediately, along
     /// with all other stored diagnostics within the handler.
-    fn report_and_drain(&mut self, diagnostic: Box<dyn Diagnostic>) -> std::fmt::Result {
+    fn report_and_drain(&mut self, diagnostic: Box<dyn Diagnostic>) -> Result<(), DrainError> {
         self.report(diagnostic);
 
         self.drain()
@@ -96,7 +138,7 @@ impl Handler for DiagnosticHandler {
         self.emitted_diagnostics.push(diagnostic);
     }
 
-    fn drain(&mut self) -> std::fmt::Result {
+    fn drain(&mut self) -> Result<(), DrainError> {
         let mut encountered_errors = 0usize;
 
         for diagnostic in &self.emitted_diagnostics {
@@ -108,14 +150,10 @@ impl Handler for DiagnosticHandler {
             }
         }
 
-        // If we've encountered any errors,
+        // If we've encountered any errors, and we're enabled to propogate errors upwards,
+        // return a specific error to compound all encountered errors.
         if encountered_errors > 0 && self.exit_on_error {
-            let message = format!("aborting due to {} previous errors", encountered_errors);
-            let abort_diag = Box::new(SimpleDiagnostic::new(message));
-
-            self.renderer.render_stderr(abort_diag.as_ref())?;
-
-            std::process::exit(1);
+            return Err(DrainError::CompoundError(encountered_errors));
         }
 
         Ok(())

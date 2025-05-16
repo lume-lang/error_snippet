@@ -10,7 +10,9 @@ fn main() {
 
     let renderer = GraphicalRenderer::new();
     let mut handler = DiagnosticHandler::with_renderer(Box::new(renderer));
-
     handler.exit_on_error();
-    handler.report_and_drain(error.into()).unwrap();
+
+    if let Err(err) = handler.report_and_drain(error.into()) {
+        eprintln!("{}", err);
+    }
 }
