@@ -131,6 +131,12 @@ impl DiagnosticHandler {
     pub fn exit_on_error(&mut self) {
         self.exit_on_error = true
     }
+
+    /// Gets the amount of diagnostics within the handler, which have
+    /// yet to be drained.
+    pub fn count(&self) -> usize {
+        self.emitted_diagnostics.len()
+    }
 }
 
 impl Handler for DiagnosticHandler {
@@ -141,7 +147,7 @@ impl Handler for DiagnosticHandler {
     fn drain(&mut self) -> Result<(), DrainError> {
         let mut encountered_errors = 0usize;
 
-        for diagnostic in &self.emitted_diagnostics {
+        for diagnostic in self.emitted_diagnostics.drain(..) {
             self.renderer.render_stderr(diagnostic.as_ref())?;
 
             // If the diagnostic is an error, mark it down.
