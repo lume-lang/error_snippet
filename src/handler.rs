@@ -132,6 +132,12 @@ impl DiagnosticHandler {
         self.exit_on_error = true
     }
 
+    /// Gets an [`Iterator`] over all the emitted diagnostics to the handler,
+    /// which have yet to be drained.
+    pub fn emitted(&self) -> impl Iterator<Item = &Box<dyn Diagnostic>> {
+        self.emitted_diagnostics.iter()
+    }
+
     /// Gets the amount of diagnostics within the handler, which have
     /// yet to be drained.
     pub fn count(&self) -> usize {
