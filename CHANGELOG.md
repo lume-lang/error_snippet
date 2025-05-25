@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.6...error_snippet-v0.1.7) - 2025-05-25
+
+### Other
+
+- *(handler)* add  method to iterate over emitted diagnostics
+
 ## [0.1.6](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.5...error_snippet-v0.1.6) - 2025-05-16
 
 ### Fixed
