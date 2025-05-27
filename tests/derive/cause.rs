@@ -7,7 +7,7 @@ use insta::assert_snapshot;
 use crate::render;
 
 #[test]
-fn single_related() {
+fn single_cause() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "child error")]
     struct Child {}
@@ -15,7 +15,7 @@ fn single_related() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[related]
+        #[cause]
         pub children: Vec<error_snippet::Error>,
     }
 
@@ -25,7 +25,7 @@ fn single_related() {
 }
 
 #[test]
-fn multiple_related() {
+fn multiple_causes() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "child error")]
     struct Child {}
@@ -33,7 +33,7 @@ fn multiple_related() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[related]
+        #[cause]
         pub children: Vec<error_snippet::Error>,
     }
 
@@ -43,7 +43,7 @@ fn multiple_related() {
 }
 
 #[test]
-fn related_with_source() {
+fn cause_with_source() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "child error")]
     struct Child {
@@ -57,7 +57,7 @@ fn related_with_source() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[related]
+        #[cause]
         pub children: Vec<error_snippet::Error>,
     }
 
@@ -79,7 +79,7 @@ fn related_with_source() {
 }
 
 #[test]
-fn sourced_error_with_related() {
+fn sourced_error_with_cause() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "child error")]
     struct Child {}
@@ -87,7 +87,7 @@ fn sourced_error_with_related() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[related]
+        #[cause]
         pub children: Vec<error_snippet::Error>,
 
         #[span]
@@ -113,7 +113,7 @@ fn sourced_error_with_related() {
 }
 
 #[test]
-fn multiple_related_with_source() {
+fn multiple_causes_with_source() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "child error")]
     struct Child {
@@ -127,7 +127,7 @@ fn multiple_related_with_source() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[related]
+        #[cause]
         pub children: Vec<error_snippet::Error>,
     }
 

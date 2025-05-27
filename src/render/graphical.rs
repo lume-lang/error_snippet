@@ -384,10 +384,10 @@ impl GraphicalRenderer {
         f: &mut impl std::fmt::Write,
         diagnostic: &dyn Diagnostic,
     ) -> std::fmt::Result {
-        for related in diagnostic.related() {
+        for cause in diagnostic.causes() {
             self.current_indent += 1;
 
-            self.render_diagnostic(f, related)?;
+            self.render_diagnostic(f, cause)?;
             writeln!(f)?;
 
             self.current_indent -= 1;
@@ -432,6 +432,15 @@ impl GraphicalRenderer {
             for (_, group) in label_groups {
                 self.render_label_group(f, group, diagnostic.severity())?;
             }
+        }
+
+        for related in diagnostic.related() {
+            self.current_indent += 1;
+
+            self.render_diagnostic(f, related)?;
+            writeln!(f)?;
+
+            self.current_indent -= 1;
         }
 
         Ok(())

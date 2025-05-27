@@ -1,0 +1,11 @@
+---
+source: tests/derive/cause.rs
+expression: "render(Parent { children: vec![Child { source, span: 13..17 }.into()] })"
+---
+× error: parent error
+      × error: child error
+         ╭─[some_file.lm:1:14]
+       1 │ fn main() -> void {
+         │              ^^^^ type not allowed
+       2 │     return 0;
+         ╰──

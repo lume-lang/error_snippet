@@ -35,6 +35,16 @@ impl DiagnosticArg {
                     ));
                 }
             }
+            "cause" => {
+                if let syn::Meta::Path(_) = &attr.meta {
+                    DiagnosticArg::Cause(field_ident.clone())
+                } else {
+                    return Err(Error::new_spanned(
+                        attr_path,
+                        "expected no arguments; should be formatted `#[cause]`",
+                    ));
+                }
+            }
             "label" => {
                 if let syn::Meta::List(meta) = &attr.meta {
                     Self::parse_label(field_ident, meta)?
