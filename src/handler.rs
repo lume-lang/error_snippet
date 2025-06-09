@@ -171,3 +171,62 @@ impl Handler for DiagnosticHandler {
         Ok(())
     }
 }
+
+/// A buffered version of [`DiagnosticHandler`].
+///
+/// The [`BufferedDiagnosticHandler`] will save rendered diagnostics to an internal buffer,
+/// allowing them to be read back as [`String`]-values. This is mostly used for UI testing.
+pub struct BufferedDiagnosticHandler {
+    /// Stores all the rendered diagnostics which have been drained.
+    buffer: String,
+
+    /// Stores all the diagnostics which have been reported.
+    emitted_diagnostics: Vec<Box<dyn Diagnostic>>,
+
+    /// Defines the renderer to use when rendering the diagnostics.
+    renderer: Box<dyn Renderer + Send + Sync>,
+}
+
+impl BufferedDiagnosticHandler {
+    /// Creates a new empty handler.
+    pub fn with_renderer(capacity: usize, renderer: Box<dyn Renderer + Send + Sync>) -> Self {
+        Self {
+            buffer: String::with_capacity(capacity),
+            emitted_diagnostics: Vec::new(),
+            renderer,
+        }
+    }
+
+    /// Gets the [`String`] buffer which contains the rendered diagnostics.
+    pub fn buffer(&self) -> &str {
+        &self.buffer
+    }
+
+    /// Gets an [`Iterator`] over all the emitted diagnostics to the handler,
+    /// which have yet to be drained.
+    pub fn emitted(&self) -> impl Iterator<Item = &Box<dyn Diagnostic>> {
+        self.emitted_diagnostics.iter()
+    }
+
+    /// Gets the amount of diagnostics within the handler, which have
+    /// yet to be drained.
+    pub fn count(&self) -> usize {
+        self.emitted_diagnostics.len()
+    }
+}
+
+impl Handler for BufferedDiagnosticHandler {
+    fn report(&mut self, diagnostic: Box<dyn Diagnostic>) {
+        self.emitted_diagnostics.push(diagnostic);
+    }
+
+    fn drain(&mut self) -> Result<(), DrainError> {
+        for diagnostic in self.emitted_diagnostics.drain(..) {
+            let rendered = self.renderer.render(diagnostic.as_ref())?;
+
+            self.buffer.push_str(&rendered);
+        }
+
+        Ok(())
+    }
+}
