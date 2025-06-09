@@ -44,7 +44,7 @@ dependencies = [
 
 [[package]]
 name = "error_snippet"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "error_snippet_derive",
  "indexmap",
