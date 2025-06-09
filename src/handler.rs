@@ -46,7 +46,7 @@ impl std::fmt::Display for DrainError {
 ///
 /// Handlers are nothing more than a "store" for diagnostics, which
 /// decides when to drain the diagnostics to the user.
-pub trait Handler {
+pub trait Handler: std::any::Any {
     /// Reports the diagnostic to the handler, without emitting it immediately.
     fn report(&mut self, diagnostic: Box<dyn Diagnostic>);
 
