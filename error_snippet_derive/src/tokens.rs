@@ -33,9 +33,9 @@ impl Diagnostic {
                 #severity_block
             }
 
-            impl ::std::error::Error for #name {}
+            impl #impl_gen ::std::error::Error for #name #ty_gen #where_clause {}
 
-            impl ::std::fmt::Display for #name {
+            impl #impl_gen ::std::fmt::Display for #name #ty_gen #where_clause {
                 fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                     write!(f, "{}", ::error_snippet::Diagnostic::message(self))
                 }
@@ -149,7 +149,7 @@ impl Diagnostic {
         let formatted = FormattedMessage::expand(lit);
 
         let stream = quote! {
-            fn message<'a>(&'a self) -> String {
+            fn message(&self) -> String {
                 #formatted
             }
         };
