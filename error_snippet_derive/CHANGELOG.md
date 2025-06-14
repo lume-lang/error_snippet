@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5](https://github.com/lume-lang/error_snippet/compare/error_snippet_derive-v0.1.4...error_snippet_derive-v0.1.5) - 2025-06-14
+
+### Added
+
+- *(derive)* allow merging spans and labels into single field
+
 ## [0.1.4](https://github.com/lume-lang/error_snippet/compare/error_snippet_derive-v0.1.3...error_snippet_derive-v0.1.4) - 2025-06-12
 
 ### Fixed
