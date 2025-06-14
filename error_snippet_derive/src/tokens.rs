@@ -121,18 +121,18 @@ impl Diagnostic {
     }
 
     /// Gets the value(s) of the `labels` attribute(s), if any was given. If not, returns `None`.
-    pub fn labels(&self) -> Option<Vec<(String, Ident)>> {
+    pub fn labels(&self) -> Option<Vec<(String, Ident, bool)>> {
         let args = self
             .args
             .iter()
             .filter_map(|arg| {
-                if let DiagnosticArg::Label(label, ident) = arg {
-                    Some((label.clone(), ident.clone()))
+                if let DiagnosticArg::Label(label, ident, has_source) = arg {
+                    Some((label.clone(), ident.clone(), *has_source))
                 } else {
                     None
                 }
             })
-            .collect::<Vec<(String, Ident)>>();
+            .collect::<Vec<(String, Ident, bool)>>();
 
         if args.is_empty() {
             None
@@ -205,16 +205,32 @@ impl Diagnostic {
         let stream = if let Some(labels) = self.labels() {
             let label_pairs = labels
                 .into_iter()
-                .map(|(label, ident)| {
+                .map(|(label, ident, has_source)| {
                     let lit_str = syn::LitStr::new(&label, proc_macro2::Span::call_site());
                     let formatted_str = FormattedMessage::expand(lit_str);
 
-                    quote! {
-                        ::error_snippet::Label::new(
-                            ::error_snippet::Diagnostic::source_code(self),
-                            self.#ident.clone(),
-                            #formatted_str
-                        )
+                    if has_source {
+                        quote! {
+                            ::error_snippet::Label::new(
+                                Some(
+                                    Into::<std::sync::Arc<dyn ::error_snippet::Source>>::into(
+                                        self.#ident.clone()
+                                    )
+                                ),
+                                Into::<::error_snippet::SpanRange>::into(
+                                    self.#ident.clone()
+                                ),
+                                #formatted_str
+                            )
+                        }
+                    } else {
+                        quote! {
+                            ::error_snippet::Label::new(
+                                ::error_snippet::Diagnostic::source_code(self),
+                                self.#ident.clone(),
+                                #formatted_str
+                            )
+                        }
                     }
                 })
                 .collect::<Vec<TokenStream>>();

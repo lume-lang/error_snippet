@@ -67,8 +67,36 @@ impl DiagnosticArg {
     }
 
     fn parse_label(ident: &syn::Ident, list: &syn::MetaList) -> Result<Self> {
-        if let Ok(label) = list.parse_args::<syn::LitStr>() {
-            Ok(DiagnosticArg::Label(label.value(), ident.clone()))
+        let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+
+        let mut has_source = false;
+        let mut label_str = None;
+
+        for label_arg in list.parse_args_with(parser)? {
+            match label_arg {
+                syn::Expr::Path(syn::ExprPath { path, .. }) => {
+                    match path.get_ident().unwrap().to_string().as_str() {
+                        "source" => has_source = true,
+                        value => {
+                            return Err(Error::new_spanned(
+                                path,
+                                format!("invalid option, {value}"),
+                            ))
+                        }
+                    }
+                }
+                syn::Expr::Lit(syn::ExprLit {
+                    lit: syn::Lit::Str(lit_str),
+                    ..
+                }) => {
+                    label_str = Some(lit_str.value());
+                }
+                _ => (),
+            }
+        }
+
+        if let Some(label) = label_str {
+            Ok(DiagnosticArg::Label(label, ident.clone(), has_source))
         } else {
             Err(Error::new_spanned(list, "expected attribute argument"))
         }
