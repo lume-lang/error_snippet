@@ -25,23 +25,33 @@ impl DiagnosticArg {
                     ));
                 }
             }
-            "related" => {
-                if let syn::Meta::Path(_) = &attr.meta {
-                    DiagnosticArg::Related(field_ident.clone())
-                } else {
+            "related" => match &attr.meta {
+                syn::Meta::Path(_) => DiagnosticArg::Related(field_ident.clone(), false),
+                syn::Meta::List(meta) => Self::parse_related(field_ident, meta)?,
+                _ => {
                     return Err(Error::new_spanned(
                         attr_path,
-                        "expected no arguments; should be formatted `#[related]`",
-                    ));
+                        "expected zero-or-one arguments; should be formatted `#[related]` or `#[related(collection)]`",
+                    ))
                 }
             }
             "cause" => {
                 if let syn::Meta::Path(_) = &attr.meta {
-                    DiagnosticArg::Cause(field_ident.clone())
+                    DiagnosticArg::Cause(field_ident.clone(), false)
                 } else {
                     return Err(Error::new_spanned(
                         attr_path,
                         "expected no arguments; should be formatted `#[cause]`",
+                    ));
+                }
+            }
+            "causes" => {
+                if let syn::Meta::Path(_) = &attr.meta {
+                    DiagnosticArg::Cause(field_ident.clone(), true)
+                } else {
+                    return Err(Error::new_spanned(
+                        attr_path,
+                        "expected no arguments; should be formatted `#[causes]`",
                     ));
                 }
             }
@@ -64,6 +74,21 @@ impl DiagnosticArg {
         };
 
         Ok(Some(arg))
+    }
+
+    fn parse_related(ident: &syn::Ident, list: &syn::MetaList) -> Result<Self> {
+        let parser = syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated;
+
+        let mut collection = false;
+
+        for arg in list.parse_args_with(parser)? {
+            match arg.get_ident().unwrap().to_string().as_str() {
+                "collection" => collection = true,
+                value => return Err(Error::new_spanned(arg, format!("invalid option, {value}"))),
+            }
+        }
+
+        Ok(DiagnosticArg::Related(ident.clone(), collection))
     }
 
     fn parse_label(ident: &syn::Ident, list: &syn::MetaList) -> Result<Self> {

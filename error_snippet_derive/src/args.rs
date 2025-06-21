@@ -8,8 +8,8 @@ pub enum DiagnosticArg {
     Code(String),
     Help(String),
     Severity(Severity),
-    Related(Ident),
-    Cause(Ident),
+    Related(Ident, bool),
+    Cause(Ident, bool),
     Span(Ident),
     Label(String, Ident, bool),
 }

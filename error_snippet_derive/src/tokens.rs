@@ -254,23 +254,36 @@ impl Diagnostic {
         let arg = self
             .args
             .iter()
-            .find(|arg| matches!(arg, DiagnosticArg::Related(_)));
-        let related = match arg {
-            Some(DiagnosticArg::Related(related)) => related.clone(),
+            .find(|arg| matches!(arg, DiagnosticArg::Related(_, _)));
+
+        let (related, collection) = match arg {
+            Some(DiagnosticArg::Related(related, collection)) => (related.clone(), *collection),
             _ => return Ok(TokenStream::new()),
         };
 
-        let stream = quote! {
-            fn related(&self) -> Box<dyn Iterator<Item = &(dyn ::error_snippet::Diagnostic + Send + Sync)> + '_> {
-                Box::new(
-                    self.#related
-                        .iter()
-                        .map(|e| e.as_ref() as &(dyn ::error_snippet::Diagnostic + Send + Sync)),
-                )
-            }
-        };
+        if collection {
+            Ok(quote! {
+                fn related(&self) -> Box<dyn Iterator<Item = &(dyn ::error_snippet::Diagnostic + Send + Sync)> + '_> {
+                    Box::new(
+                        self.#related
+                            .iter()
+                            .map(|e| e.as_ref() as &(dyn ::error_snippet::Diagnostic + Send + Sync)),
+                    )
+                }
+            })
+        } else {
+            Ok(quote! {
+                fn related(&self) -> Box<dyn Iterator<Item = &(dyn ::error_snippet::Diagnostic + Send + Sync)> + '_> {
+                    let related: &(dyn error_snippet::Diagnostic + Send + Sync) =
+                        (&self.#related as &error_snippet::Error).as_ref();
 
-        Ok(stream)
+                    let iter = std::iter::once(related)
+                        as std::iter::Once<&(dyn ::error_snippet::Diagnostic + Send + Sync)>;
+
+                    Box::new(iter)
+                }
+            })
+        }
     }
 
     /// Creates the implementation block for the `cause` trait function.
@@ -278,23 +291,36 @@ impl Diagnostic {
         let arg = self
             .args
             .iter()
-            .find(|arg| matches!(arg, DiagnosticArg::Cause(_)));
-        let cause = match arg {
-            Some(DiagnosticArg::Cause(cause)) => cause.clone(),
+            .find(|arg| matches!(arg, DiagnosticArg::Cause(_, _)));
+
+        let (cause, collection) = match arg {
+            Some(DiagnosticArg::Cause(cause, collection)) => (cause.clone(), *collection),
             _ => return Ok(TokenStream::new()),
         };
 
-        let stream = quote! {
-            fn causes(&self) -> Box<dyn Iterator<Item = &(dyn ::error_snippet::Diagnostic + Send + Sync)> + '_> {
-                Box::new(
-                    self.#cause
-                        .iter()
-                        .map(|e| e.as_ref() as &(dyn ::error_snippet::Diagnostic + Send + Sync)),
-                )
-            }
-        };
+        if collection {
+            Ok(quote! {
+                fn causes(&self) -> Box<dyn Iterator<Item = &(dyn ::error_snippet::Diagnostic + Send + Sync)> + '_> {
+                    Box::new(
+                        self.#cause
+                            .iter()
+                            .map(|e| e.as_ref() as &(dyn ::error_snippet::Diagnostic + Send + Sync)),
+                    )
+                }
+            })
+        } else {
+            Ok(quote! {
+                fn causes(&self) -> Box<dyn Iterator<Item = &(dyn ::error_snippet::Diagnostic + Send + Sync)> + '_> {
+                    let causes: &(dyn error_snippet::Diagnostic + Send + Sync) =
+                        (&self.#cause as &error_snippet::Error).as_ref();
 
-        Ok(stream)
+                    let iter = std::iter::once(causes)
+                        as std::iter::Once<&(dyn ::error_snippet::Diagnostic + Send + Sync)>;
+
+                    Box::new(iter)
+                }
+            })
+        }
     }
 
     /// Creates the implementation block for the `source_code` trait function.

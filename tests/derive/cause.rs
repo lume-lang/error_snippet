@@ -16,11 +16,11 @@ fn single_cause() {
     #[diagnostic(message = "parent error")]
     struct Parent {
         #[cause]
-        pub children: Vec<error_snippet::Error>,
+        pub child: error_snippet::Error,
     }
 
     assert_snapshot!(render(Parent {
-        children: vec![Child {}.into()]
+        child: Child {}.into()
     }));
 }
 
@@ -33,7 +33,7 @@ fn multiple_causes() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[cause]
+        #[causes]
         pub children: Vec<error_snippet::Error>,
     }
 
@@ -58,7 +58,7 @@ fn cause_with_source() {
     #[diagnostic(message = "parent error")]
     struct Parent {
         #[cause]
-        pub children: Vec<error_snippet::Error>,
+        pub child: error_snippet::Error,
     }
 
     let source = Arc::new(NamedSource::new(
@@ -70,11 +70,11 @@ fn cause_with_source() {
     ));
 
     assert_snapshot!(render(Parent {
-        children: vec![Child {
+        child: Child {
             source,
             span: 13..17
         }
-        .into()]
+        .into()
     }));
 }
 
@@ -88,7 +88,7 @@ fn sourced_error_with_cause() {
     #[diagnostic(message = "parent error")]
     struct Parent {
         #[cause]
-        pub children: Vec<error_snippet::Error>,
+        pub child: error_snippet::Error,
 
         #[span]
         pub source: Arc<NamedSource>,
@@ -106,7 +106,7 @@ fn sourced_error_with_cause() {
     ));
 
     assert_snapshot!(render(Parent {
-        children: vec![Child {}.into()],
+        child: Child {}.into(),
         source,
         span: 13..17
     }));
@@ -127,7 +127,7 @@ fn multiple_causes_with_source() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[cause]
+        #[causes]
         pub children: Vec<error_snippet::Error>,
     }
 

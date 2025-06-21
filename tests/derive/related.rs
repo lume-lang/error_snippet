@@ -16,11 +16,11 @@ fn single_related() {
     #[diagnostic(message = "parent error")]
     struct Parent {
         #[related]
-        pub children: Vec<error_snippet::Error>,
+        pub child: error_snippet::Error,
     }
 
     assert_snapshot!(render(Parent {
-        children: vec![Child {}.into()]
+        child: Child {}.into()
     }));
 }
 
@@ -33,7 +33,7 @@ fn multiple_related() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[related]
+        #[related(collection)]
         pub children: Vec<error_snippet::Error>,
     }
 
@@ -57,7 +57,7 @@ fn related_with_source() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[related]
+        #[related(collection)]
         pub children: Vec<error_snippet::Error>,
     }
 
@@ -87,7 +87,7 @@ fn sourced_error_with_related() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[related]
+        #[related(collection)]
         pub children: Vec<error_snippet::Error>,
 
         #[span]
@@ -127,7 +127,7 @@ fn multiple_related_with_source() {
     #[derive(Debug, Diagnostic)]
     #[diagnostic(message = "parent error")]
     struct Parent {
-        #[related]
+        #[related(collection)]
         pub children: Vec<error_snippet::Error>,
     }
 

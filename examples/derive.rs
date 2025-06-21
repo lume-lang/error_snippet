@@ -15,6 +15,9 @@ struct ApplicationError {
 
     #[label("error occured here")]
     pub span: Range<usize>,
+
+    #[related]
+    pub related: error_snippet::Error,
 }
 
 fn main() {
@@ -28,6 +31,7 @@ fn main() {
     let error = ApplicationError {
         source,
         span: 23..29,
+        related: error_snippet::SimpleDiagnostic::new("lmfao").into(),
     };
 
     let mut renderer = GraphicalRenderer::new();
