@@ -1,6 +1,6 @@
 [package]
 name = "error_snippet"
-version = "0.1.13"
+version = "0.1.14"
 authors = ["Max T. Kristiansen <me@maxtrier.dk>"]
 description = "Library for reporting fancy diagnostics to the console"
 keywords = ["error", "diagnostics", "report", "programming-language"]
@@ -19,7 +19,7 @@ rust-version = "1.85.0"
 exclude = ["examples/*.png"]
 
 [dependencies]
-error_snippet_derive = { path = "error_snippet_derive", version = "=0.1.6", optional = true }
+error_snippet_derive = { path = "error_snippet_derive", version = "=0.1.7", optional = true }
 
 fxhash = { version = "=0.2.1", optional = true }
 indexmap = "=2.9.0"

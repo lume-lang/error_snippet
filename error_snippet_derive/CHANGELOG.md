@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7](https://github.com/lume-lang/error_snippet/compare/error_snippet_derive-v0.1.6...error_snippet_derive-v0.1.7) - 2025-07-10
+
+### Added
+
+- *(derive)* added automatic coloring of format args
+- *(derive)* added ability to set label severity
+
+### Other
+
+- embed format args in format strings
+
 ## [0.1.6](https://github.com/lume-lang/error_snippet/compare/error_snippet_derive-v0.1.5...error_snippet_derive-v0.1.6) - 2025-06-21
 
 ### Added
