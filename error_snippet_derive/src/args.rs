@@ -11,7 +11,12 @@ pub enum DiagnosticArg {
     Related(Ident, bool),
     Cause(Ident, bool),
     Span(Ident),
-    Label(String, Ident, bool),
+    Label {
+        severity: Option<Severity>,
+        label: String,
+        ident: Ident,
+        has_source: bool,
+    },
 }
 
 impl DiagnosticArg {

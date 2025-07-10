@@ -1,6 +1,6 @@
 use syn::{Error, Field, Result};
 
-use crate::args::DiagnosticArg;
+use crate::{args::DiagnosticArg, diagnostic::Severity};
 
 impl DiagnosticArg {
     pub fn parse_field(field: &Field) -> Result<Option<Self>> {
@@ -95,13 +95,19 @@ impl DiagnosticArg {
         let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
 
         let mut has_source = false;
+        let mut severity = None;
         let mut label_str = None;
 
         for label_arg in list.parse_args_with(parser)? {
             match label_arg {
                 syn::Expr::Path(syn::ExprPath { path, .. }) => {
-                    match path.get_ident().unwrap().to_string().as_str() {
+                    let ident = path.get_ident().unwrap();
+
+                    match ident.to_string().as_str() {
                         "source" => has_source = true,
+                        "note" | "help" | "info" | "warning" | "error" => {
+                            severity = Some(Severity(ident.clone()))
+                        }
                         value => {
                             return Err(Error::new_spanned(
                                 path,
@@ -121,7 +127,12 @@ impl DiagnosticArg {
         }
 
         if let Some(label) = label_str {
-            Ok(DiagnosticArg::Label(label, ident.clone(), has_source))
+            Ok(DiagnosticArg::Label {
+                severity,
+                label,
+                ident: ident.clone(),
+                has_source,
+            })
         } else {
             Err(Error::new_spanned(list, "expected attribute argument"))
         }

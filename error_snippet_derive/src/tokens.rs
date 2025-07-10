@@ -7,8 +7,15 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Ident;
 
+struct LabelIdent {
+    severity: Option<Ident>,
+    label: String,
+    ident: Ident,
+    has_source: bool,
+}
+
 impl Diagnostic {
-    pub fn tokens(&self) -> syn::Result<TokenStream> {
+    pub(crate) fn tokens(&self) -> syn::Result<TokenStream> {
         let (impl_gen, ty_gen, where_clause) = &self.generics.split_for_impl();
 
         let name = &self.ident;
@@ -47,7 +54,7 @@ impl Diagnostic {
 
     /// Gets the value of the `message` attribute, if any was given. If not, raises
     /// an error for the user.
-    pub fn message(&self) -> syn::Result<String> {
+    pub(crate) fn message(&self) -> syn::Result<String> {
         let arg = self
             .args
             .iter()
@@ -61,7 +68,7 @@ impl Diagnostic {
     }
 
     /// Gets the value of the `code` attribute, if any was given. If not, returns `None`.
-    pub fn code(&self) -> Option<String> {
+    fn code(&self) -> Option<String> {
         let arg = self
             .args
             .iter()
@@ -74,7 +81,7 @@ impl Diagnostic {
     }
 
     /// Gets the value(s) of the `help` attribute(s), if any was given. If not, returns `None`.
-    pub fn help(&self) -> Option<Vec<String>> {
+    fn help(&self) -> Option<Vec<String>> {
         let args = self
             .args
             .iter()
@@ -95,7 +102,7 @@ impl Diagnostic {
     }
 
     /// Gets the source code of the diagnostic, if any was given. If not, returns `None`.
-    pub fn span(&self) -> Option<Ident> {
+    fn span(&self) -> Option<Ident> {
         let arg = self
             .args
             .iter()
@@ -108,7 +115,7 @@ impl Diagnostic {
     }
 
     /// Gets the severity of the diagnostic, if any was given. If not, returns `None`.
-    pub fn severity(&self) -> Option<Severity> {
+    fn severity(&self) -> Option<Severity> {
         let arg = self
             .args
             .iter()
@@ -121,18 +128,29 @@ impl Diagnostic {
     }
 
     /// Gets the value(s) of the `labels` attribute(s), if any was given. If not, returns `None`.
-    pub fn labels(&self) -> Option<Vec<(String, Ident, bool)>> {
+    fn labels(&self) -> Option<Vec<LabelIdent>> {
         let args = self
             .args
             .iter()
             .filter_map(|arg| {
-                if let DiagnosticArg::Label(label, ident, has_source) = arg {
-                    Some((label.clone(), ident.clone(), *has_source))
+                if let DiagnosticArg::Label {
+                    severity,
+                    label,
+                    ident,
+                    has_source,
+                } = arg
+                {
+                    Some(LabelIdent {
+                        severity: severity.clone().map(|sev| sev.0),
+                        label: label.clone(),
+                        ident: ident.clone(),
+                        has_source: *has_source,
+                    })
                 } else {
                     None
                 }
             })
-            .collect::<Vec<(String, Ident, bool)>>();
+            .collect::<Vec<LabelIdent>>();
 
         if args.is_empty() {
             None
@@ -205,34 +223,44 @@ impl Diagnostic {
         let stream = if let Some(labels) = self.labels() {
             let label_pairs = labels
                 .into_iter()
-                .map(|(label, ident, has_source)| {
-                    let lit_str = syn::LitStr::new(&label, proc_macro2::Span::call_site());
-                    let formatted_str = FormattedMessage::expand(lit_str);
+                .map(
+                    |LabelIdent {
+                         severity,
+                         label,
+                         ident,
+                         has_source,
+                     }| {
+                        let lit_str = syn::LitStr::new(&label, proc_macro2::Span::call_site());
+                        let formatted_str = FormattedMessage::expand(lit_str);
 
-                    if has_source {
-                        quote! {
-                            ::error_snippet::Label::new(
-                                Some(
-                                    Into::<std::sync::Arc<dyn ::error_snippet::Source>>::into(
+                        let method_name = severity
+                            .unwrap_or_else(|| Ident::new("new", proc_macro2::Span::call_site()));
+
+                        if has_source {
+                            quote! {
+                                ::error_snippet::Label::#method_name(
+                                    Some(
+                                        Into::<std::sync::Arc<dyn ::error_snippet::Source>>::into(
+                                            self.#ident.clone()
+                                        )
+                                    ),
+                                    Into::<::error_snippet::SpanRange>::into(
                                         self.#ident.clone()
-                                    )
-                                ),
-                                Into::<::error_snippet::SpanRange>::into(
-                                    self.#ident.clone()
-                                ),
-                                #formatted_str
-                            )
+                                    ),
+                                    #formatted_str
+                                )
+                            }
+                        } else {
+                            quote! {
+                                ::error_snippet::Label::#method_name(
+                                    ::error_snippet::Diagnostic::source_code(self),
+                                    self.#ident.clone(),
+                                    #formatted_str
+                                )
+                            }
                         }
-                    } else {
-                        quote! {
-                            ::error_snippet::Label::new(
-                                ::error_snippet::Diagnostic::source_code(self),
-                                self.#ident.clone(),
-                                #formatted_str
-                            )
-                        }
-                    }
-                })
+                    },
+                )
                 .collect::<Vec<TokenStream>>();
 
             quote! {
