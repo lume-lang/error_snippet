@@ -13,11 +13,13 @@ struct ApplicationError {
     #[span]
     pub source: Arc<dyn Source>,
 
-    #[label("error occured here")]
+    #[label("error occured here {test}")]
     pub span: Range<usize>,
 
     #[related]
     pub related: error_snippet::Error,
+
+    pub test: String,
 }
 
 fn main() {
@@ -32,6 +34,7 @@ fn main() {
         source,
         span: 23..29,
         related: error_snippet::SimpleDiagnostic::new("lmfao").into(),
+        test: "test".to_string(),
     };
 
     let mut renderer = GraphicalRenderer::new();
