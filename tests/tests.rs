@@ -7,5 +7,5 @@ fn render(diagnostic: impl Diagnostic) -> String {
     let mut renderer = GraphicalRenderer::new();
     renderer.use_colors = false;
 
-    renderer.render(&diagnostic).unwrap().to_string()
+    owo_colors::with_override(false, || renderer.render(&diagnostic).unwrap().to_string())
 }

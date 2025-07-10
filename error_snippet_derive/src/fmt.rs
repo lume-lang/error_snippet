@@ -2,6 +2,19 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{ext::IdentExt, parse::Parser, Ident, LitStr};
 
+/// Determines whether the given substring is a debug print format.
+fn is_debug_print(read: &str) -> bool {
+    let Some(brace) = read.find('}') else {
+        return false;
+    };
+
+    let Some(debug) = read.find('?') else {
+        return false;
+    };
+
+    debug < brace
+}
+
 pub struct FormattedMessage {
     format: LitStr,
 }
@@ -37,8 +50,20 @@ impl FormattedMessage {
                 _ => continue,
             };
 
-            let tokens = quote! {
-                #ident = self.#ident
+            let is_debug = is_debug_print(read);
+
+            let tokens = if is_debug {
+                // We cannot add colors to `Debug` formatted args, since they
+                // might not support the `Display` trait, i.e. we cannot use `.to_string()`.
+                quote! {
+                    #ident = self.#ident
+                }
+            } else {
+                quote! {
+                    #ident = ::error_snippet::color_arg_hash(
+                        ::std::string::ToString::to_string(&self.#ident)
+                    )
+                }
             };
 
             args.push(tokens);
