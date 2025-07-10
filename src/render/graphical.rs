@@ -358,7 +358,7 @@ impl GraphicalRenderer {
         )?;
 
         if let Some(code) = &diagnostic.code() {
-            write!(f, "{}", self.style(&format!("[{}]", code), severity_style))?;
+            write!(f, "{}", self.style(&format!("[{code}]"), severity_style))?;
         }
 
         writeln!(f, ": {}", diagnostic.message())
@@ -622,7 +622,7 @@ impl GraphicalRenderer {
     ) -> std::fmt::Result {
         self.write_ident(f)?;
 
-        write!(f, "{:^padding$}{} ", gutter, bar, padding = padding)
+        write!(f, "{gutter:^padding$}{bar} ")
     }
 
     /// Renders an empty gutter for a single line in a source snippet.
@@ -671,7 +671,7 @@ impl GraphicalRenderer {
     ) -> std::fmt::Result {
         self.render_snippet_line_gutter(f, padding, line_num)?;
 
-        writeln!(f, "{}", line)
+        writeln!(f, "{line}")
     }
 
     /// Renders a single vertical break in a source snippet.
@@ -746,7 +746,7 @@ impl GraphicalRenderer {
     ) -> std::fmt::Result {
         self.render_line_marker_arrows(f, style, columns, padding)?;
 
-        writeln!(f, " {}", message)
+        writeln!(f, " {message}")
     }
 
     /// Renders the arrow markers underneath a labeled line.

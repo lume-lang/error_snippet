@@ -13,6 +13,6 @@ fn main() {
     handler.exit_on_error();
 
     if let Err(err) = handler.report_and_drain(error.into()) {
-        eprintln!("{}", err);
+        eprintln!("{err}");
     }
 }

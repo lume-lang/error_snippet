@@ -68,7 +68,7 @@ impl DiagnosticArg {
             unk => {
                 return Err(Error::new_spanned(
                     attr_path,
-                    format!("unknown property attribute: {}", unk),
+                    format!("unknown property attribute: {unk}"),
                 ))
             }
         };

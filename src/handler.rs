@@ -37,7 +37,7 @@ impl std::fmt::Display for DrainError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Fmt(e) => e.fmt(f),
-            Self::CompoundError(cnt) => write!(f, "aborting due to {} previous errors", cnt),
+            Self::CompoundError(cnt) => write!(f, "aborting due to {cnt} previous errors"),
         }
     }
 }
