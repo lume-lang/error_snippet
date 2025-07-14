@@ -546,7 +546,7 @@ impl GraphicalRenderer {
         for (idx, snipped_line) in snipped_content.lines().enumerate() {
             let line_num = first_line_num + idx;
 
-            let snippet_line = if self.highlight_source && idx == self.context_lines {
+            let snippet_line = if self.highlight_source && idx == center_line {
                 self.style_substring(snipped_line, columns.clone(), severity_style)
             } else {
                 Style::new().style(snipped_line.to_string())
