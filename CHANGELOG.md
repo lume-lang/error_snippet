@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.17](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.16...error_snippet-v0.1.17) - 2025-07-25
+
+### Fixed
+
+- *(renderer)* override  when colors disabled
+- fix out-of-bounds error when using highlighted source
+
 ## [0.1.16](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.15...error_snippet-v0.1.16) - 2025-07-14
 
 ### Fixed
