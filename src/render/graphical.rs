@@ -326,11 +326,13 @@ impl GraphicalRenderer {
         f: &mut impl std::fmt::Write,
         diagnostic: &dyn Diagnostic,
     ) -> std::fmt::Result {
-        self.render_header(f, diagnostic)?;
-        self.render_source(f, diagnostic)?;
-        self.render_footer(f, diagnostic)?;
+        owo_colors::with_override(self.use_colors, || {
+            self.render_header(f, diagnostic)?;
+            self.render_source(f, diagnostic)?;
+            self.render_footer(f, diagnostic)?;
 
-        Ok(())
+            Result::Ok(())
+        })
     }
 
     /// Renders the header of the diagnostic message, which includes severity and diagnostic code (if any).
