@@ -50,7 +50,7 @@ dependencies = [
 
 [[package]]
 name = "error_snippet"
-version = "0.1.17"
+version = "0.1.18"
 dependencies = [
  "error_snippet_derive",
  "fxhash",

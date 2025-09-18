@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.18](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.17...error_snippet-v0.1.18) - 2025-09-18
+
+### Other
+
+- make dependency versions less pendantic
+
 ## [0.1.17](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.16...error_snippet-v0.1.17) - 2025-07-25
 
 ### Fixed
