@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.19](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.18...error_snippet-v0.1.19) - 2025-09-20
+
+### Fixed
+
+- *(render/graphical)* render first context window if no lines match
+- *(render/graphical)* always render at least one marker arrow
+- *(render/graphical)* prevent out-of-bounds panic when passing label range out of range
+- *(render/graphical)* prevent unsigned underflow on negative marker length
+
+### Other
+
+- *(render/graphical)* default to marking rest of line of columns are invalid
+- add tests for invalid labels
+- add fuzzing target for graphical renderer
+
 ## [0.1.18](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.17...error_snippet-v0.1.18) - 2025-09-18
 
 ### Other
