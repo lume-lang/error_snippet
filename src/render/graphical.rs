@@ -1292,8 +1292,18 @@ pub fn extract_with_context_offset(
         }
     }
 
+    // If the range is outside the span of the input string,
+    // we return the first context window of the string as a fallback.
     if matching_lines.is_empty() {
-        return ("", 0);
+        // Get the end of the context window, if possible.
+        // Otherwise, just return the entire string.
+        let last_line_span = line_spans
+            .get(context_lines * 2 + 1)
+            .or_else(|| line_spans.last());
+
+        let last_line_idx = last_line_span.map(|s| s.end).unwrap_or_default();
+
+        return (&input[0..last_line_idx], context_lines);
     }
 
     let first_matching_line = *matching_lines.first().unwrap();
