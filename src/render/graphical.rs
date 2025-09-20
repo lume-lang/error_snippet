@@ -560,11 +560,12 @@ impl GraphicalRenderer {
             self.render_snippet_line(f, padding, snippet_line, line_num + 1)?;
 
             if line_num == center_line {
-                let marker_columns = if columns.end < columns.start {
-                    columns.start..snipped_line.len()
-                } else {
-                    columns.clone()
-                };
+                let marker_columns =
+                    if columns.end <= columns.start || columns.end > snipped_line.len() {
+                        columns.start..snipped_line.len()
+                    } else {
+                        columns.clone()
+                    };
 
                 self.render_line_marker(
                     f,
