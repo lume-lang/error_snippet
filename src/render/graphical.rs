@@ -287,11 +287,14 @@ impl GraphicalRenderer {
         }
 
         let span: Range<usize> = span.into();
+        let Some((middle, after)) = val.split_at_checked(span.end) else {
+            return style.style(val);
+        };
 
-        let (middle, after) = val.split_at(span.end);
         let middle = middle.to_string();
-
-        let (before, middle) = middle.split_at(span.start);
+        let Some((before, middle)) = middle.split_at_checked(span.start) else {
+            return style.style(middle);
+        };
 
         let styled = format!("{}{}{}", before, middle.style(style), after);
 
