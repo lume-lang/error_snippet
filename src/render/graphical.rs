@@ -770,7 +770,7 @@ impl GraphicalRenderer {
         self.render_snippet_line_empty_gutter(f, padding)?;
         self.write_padding(f, columns.start)?;
 
-        let marker_len = columns.end.saturating_sub(columns.start);
+        let marker_len = columns.end.saturating_sub(columns.start).max(1);
 
         for _ in 0..marker_len {
             write!(f, "{}", self.style(&self.theme.arrows.arrow_up, style))?;
