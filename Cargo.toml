@@ -37,7 +37,7 @@ termsize = ["dep:terminal_size"]
 colored-args = ["derive", "dep:fxhash"]
 
 [workspace]
-members = ["error_snippet_derive"]
+members = ["error_snippet_derive", "fuzz"]
 
 [[example]]
 name = "source_slice"

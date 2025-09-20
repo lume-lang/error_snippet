@@ -1,0 +1,22 @@
+[package]
+name = "error_snippet_fuzz"
+version = "0.0.0"
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+error_snippet = { path = "../" }
+error_snippet_derive = { path = "../error_snippet_derive" }
+
+arbitrary = { version = "1", features = ["derive"] }
+libfuzzer-sys = "0.4"
+
+[[bin]]
+name = "fuzz_graphical"
+path = "fuzz_targets/fuzz_graphical.rs"
+test = false
+doc = false
+bench = false
