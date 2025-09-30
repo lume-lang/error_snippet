@@ -1,6 +1,6 @@
 use crate::{
     args::DiagnosticArg,
-    diagnostic::{Diagnostic, Severity},
+    diagnostic::{AttrDiagnostic, Severity},
     fmt::FormattedMessage,
 };
 use proc_macro2::TokenStream;
@@ -14,7 +14,7 @@ struct LabelIdent {
     has_source: bool,
 }
 
-impl Diagnostic {
+impl AttrDiagnostic {
     pub(crate) fn tokens(&self) -> syn::Result<TokenStream> {
         let (impl_gen, ty_gen, where_clause) = &self.generics.split_for_impl();
 

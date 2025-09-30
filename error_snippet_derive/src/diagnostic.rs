@@ -4,19 +4,19 @@ use syn::Ident;
 #[derive(Clone, Debug)]
 pub struct Severity(pub Ident);
 
-pub struct Diagnostic {
+pub struct AttrDiagnostic {
     pub ident: Ident,
     pub args: Vec<DiagnosticArg>,
     pub generics: syn::Generics,
     pub fields: syn::Fields,
 }
 
-impl Diagnostic {
+impl AttrDiagnostic {
     pub fn from(input: syn::DeriveInput) -> syn::Result<Self> {
         if let syn::Data::Struct(syn::DataStruct { fields, .. }) = input.data {
             let args = DiagnosticArg::parse_attributes(&input.attrs)?;
 
-            let mut diagnostic = Diagnostic {
+            let mut diagnostic = AttrDiagnostic {
                 ident: input.ident,
                 args,
                 generics: input.generics,
