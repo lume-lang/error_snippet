@@ -88,7 +88,7 @@ dependencies = [
 
 [[package]]
 name = "error_snippet"
-version = "0.1.19"
+version = "0.1.20"
 dependencies = [
  "error_snippet_derive",
  "fxhash",
@@ -101,7 +101,7 @@ dependencies = [
 
 [[package]]
 name = "error_snippet_derive"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "insta",
  "proc-macro2",
