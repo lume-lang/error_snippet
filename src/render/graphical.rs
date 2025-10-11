@@ -124,9 +124,6 @@ pub struct ArrowSymbols {
 
     /// "^"
     pub arrow_up: char,
-
-    /// "↓"
-    pub arrow_down: char,
 }
 
 impl ArrowSymbols {
@@ -139,7 +136,6 @@ impl ArrowSymbols {
             bottom_left: '╰',
             horizontal_right: '├',
             arrow_up: '^',
-            arrow_down: '↓',
         }
     }
 }
@@ -274,19 +270,19 @@ impl GraphicalRenderer {
     ///
     /// If colors are disabled on the renderer, no styles are applied and the
     /// value is kept unstyled.
-    fn style_substring(
-        &self,
-        val: impl Into<String>,
-        span: impl Into<Range<usize>>,
-        style: Style,
-    ) -> Styled<String> {
+    fn style_substring(&self, val: impl Into<String>, span: Span, style: Style) -> Styled<String> {
         let val: String = val.into();
 
         if !self.use_colors {
             return Style::new().style(val);
         }
 
-        let span: Range<usize> = span.into();
+        let span: Range<usize> = if span.is_multiline() {
+            span.start.column..val.len()
+        } else {
+            span.start.column..span.end.column
+        };
+
         let Some((middle, after)) = val.split_at_checked(span.end) else {
             return style.style(val);
         };
@@ -489,8 +485,8 @@ impl GraphicalRenderer {
         //
         //    ╭─[std/array.lm:35:8]
         //
-        let (line_num, columns) = coords_of_span(&source_content, first_label.range().clone());
-        self.render_snippet_header(f, source_name, gutter_size, line_num, columns.start)?;
+        let Span { start, .. } = coords_of_span(&source_content, first_label.range().clone());
+        self.render_snippet_header(f, source_name, gutter_size, start.line, start.column)?;
 
         // Render all the labels in in the group, along with joiners in the vertical gutter.
         //
@@ -542,8 +538,8 @@ impl GraphicalRenderer {
         let severity_style = self.theme.style.from_severity(severity);
 
         let source_content = source.content();
-        let (label_line_num, columns) = coords_of_span(&source_content, label.range().clone());
-        let first_line_num = label_line_num.saturating_sub(self.context_lines);
+        let span = coords_of_span(&source_content, label.range().clone());
+        let first_line_num = span.start.line.saturating_sub(self.context_lines);
 
         let (snipped_content, center_line) =
             extract_with_context_offset(&source_content, label.range().clone(), self.context_lines);
@@ -552,7 +548,7 @@ impl GraphicalRenderer {
             let line_num = first_line_num + idx;
 
             let snippet_line = if self.highlight_source && line_num == center_line {
-                self.style_substring(snipped_line, columns.clone(), severity_style)
+                self.style_substring(snipped_line, span, severity_style)
             } else {
                 Style::new().style(snipped_line.to_string())
             };
@@ -560,12 +556,11 @@ impl GraphicalRenderer {
             self.render_snippet_line(f, padding, snippet_line, line_num + 1)?;
 
             if line_num == center_line {
-                let marker_columns =
-                    if columns.end <= columns.start || columns.end > snipped_line.len() {
-                        columns.start..snipped_line.len()
-                    } else {
-                        columns.clone()
-                    };
+                let marker_columns = if span.is_multiline() || span.is_empty() {
+                    span.start.column..snipped_line.len()
+                } else {
+                    span.start.column..span.end.column
+                };
 
                 self.render_line_marker(
                     f,
@@ -915,7 +910,7 @@ impl GraphicalRenderer {
                 Suggestion::Replacement { range, .. } => range.span.0.start,
             };
 
-            let (line, _) = coords_of_idx(&source_content, start_idx);
+            let Coord { line, .. } = coords_of_idx(&source_content, start_idx);
 
             if let Some(group) = suggested_lines.get_mut(&line) {
                 group.push(suggestion.clone());
@@ -979,10 +974,9 @@ impl GraphicalRenderer {
         let mut styled_line = Box::new(source_line) as Box<dyn std::fmt::Display>;
 
         for suggestion in &suggestions {
-            let span = suggestion.span();
-            let (_, columns) = coords_of_span(&source_content, span);
+            let span = coords_of_span(&source_content, suggestion.span());
 
-            styled_line = self.style_suggestion_line(suggestion, styled_line, columns);
+            styled_line = self.style_suggestion_line(suggestion, styled_line, span);
         }
 
         self.render_snippet_line(f, padding, styled_line, line_num + 1)?;
@@ -1001,10 +995,10 @@ impl GraphicalRenderer {
         let mut offset = 0;
         for suggestion in &suggestions {
             let span = suggestion.span();
-            let (_, columns) = coords_of_span(&source_content, span);
+            let Span { start, end } = coords_of_span(&source_content, span);
 
             // Write the padding between the arrows.
-            let spacing = columns.start.checked_sub(offset).unwrap_or_default();
+            let spacing = start.column.checked_sub(offset).unwrap_or_default();
 
             write!(f, "{}", " ".repeat(spacing))?;
 
@@ -1024,7 +1018,7 @@ impl GraphicalRenderer {
                 write!(f, "{}", self.style(&self.theme.arrows.arrow_up, style))?;
             }
 
-            offset = columns.end;
+            offset = end.column;
         }
 
         writeln!(f)
@@ -1035,9 +1029,15 @@ impl GraphicalRenderer {
         &self,
         suggestion: &Suggestion,
         line: Box<dyn std::fmt::Display + 'a>,
-        span: Range<usize>,
+        span: Span,
     ) -> Box<dyn std::fmt::Display + 'a> {
         let line = line.to_string();
+
+        let span: Range<usize> = if span.is_multiline() {
+            span.start.column..line.len()
+        } else {
+            span.start.column..span.end.column
+        };
 
         let formatted = match suggestion {
             Suggestion::Deletion { .. } => {
@@ -1117,20 +1117,42 @@ fn split_str_at<const N: usize>(str: &str, mut indices: Vec<usize>) -> [&str; N]
     slices
 }
 
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+struct Coord {
+    pub line: usize,
+    pub column: usize,
+}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+struct Span {
+    pub start: Coord,
+    pub end: Coord,
+}
+
+impl Span {
+    pub fn is_multiline(self) -> bool {
+        self.start.line != self.end.line
+    }
+
+    pub fn is_empty(self) -> bool {
+        self.start.line >= self.end.line && self.start.column >= self.end.column
+    }
+}
+
 /// Gets the line number and column indices which contains the given span.
-fn coords_of_span(str: &str, span: impl Into<Range<usize>>) -> (usize, Range<usize>) {
-    let span: Range<usize> = span.into();
+fn coords_of_span(str: &str, span: impl Into<Range<usize>>) -> Span {
+    let range: Range<usize> = span.into();
 
-    let (line, start) = coords_of_idx(str, span.start);
-    let (_, end) = coords_of_idx(str, span.end);
+    let start = coords_of_idx(str, range.start);
+    let end = coords_of_idx(str, range.end);
 
-    (line, start..end)
+    Span { start, end }
 }
 
 /// Gets the line number and column number which contains the character at the given index.
-fn coords_of_idx(str: &str, index: usize) -> (usize, usize) {
+fn coords_of_idx(str: &str, index: usize) -> Coord {
     if index > str.len() {
-        return (0, 0);
+        return Coord::default();
     }
 
     let mut line = 0;
@@ -1138,7 +1160,7 @@ fn coords_of_idx(str: &str, index: usize) -> (usize, usize) {
 
     for (i, c) in str.chars().peekable().enumerate() {
         if i == index {
-            return (line, column);
+            return Coord { line, column };
         }
 
         if c == '\n' {
@@ -1150,20 +1172,20 @@ fn coords_of_idx(str: &str, index: usize) -> (usize, usize) {
     }
 
     if index == str.len() {
-        return (line, column);
+        return Coord { line, column };
     }
 
-    (0, 0)
+    Coord::default()
 }
 
 #[cfg(test)]
 mod coords_of_idx_tests {
-    use super::coords_of_idx;
+    use super::{coords_of_idx, Coord};
 
     #[test]
     fn test_index_out_of_range() {
         let source = "let a = 1;";
-        let (line, column) = coords_of_idx(source, 12);
+        let Coord { line, column } = coords_of_idx(source, 12);
 
         assert_eq!(line, 0);
         assert_eq!(column, 0);
@@ -1172,7 +1194,7 @@ mod coords_of_idx_tests {
     #[test]
     fn test_index_at_end_boundary() {
         let source = "let a = 1;";
-        let (line, column) = coords_of_idx(source, 10);
+        let Coord { line, column } = coords_of_idx(source, 10);
 
         assert_eq!(line, 0);
         assert_eq!(column, 10);
@@ -1181,7 +1203,7 @@ mod coords_of_idx_tests {
     #[test]
     fn test_multiline() {
         let source = "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;";
-        let (line, column) = coords_of_idx(source, 26);
+        let Coord { line, column } = coords_of_idx(source, 26);
 
         assert_eq!(line, 2);
         assert_eq!(column, 4);
@@ -1190,7 +1212,7 @@ mod coords_of_idx_tests {
     #[test]
     fn test_multiline_line_boundary_start() {
         let source = "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;";
-        let (line, column) = coords_of_idx(source, 22);
+        let Coord { line, column } = coords_of_idx(source, 22);
 
         assert_eq!(line, 2);
         assert_eq!(column, 0);
@@ -1199,7 +1221,7 @@ mod coords_of_idx_tests {
     #[test]
     fn test_multiline_line_boundary_end() {
         let source = "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;";
-        let (line, column) = coords_of_idx(source, 36);
+        let Coord { line, column } = coords_of_idx(source, 36);
 
         assert_eq!(line, 2);
         assert_eq!(column, 14);
