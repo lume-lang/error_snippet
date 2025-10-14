@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.20...error_snippet-v0.2.0) - 2025-10-14
+
+### Added
+
+- *(renderer)* add multiline support to graphical renderer
+
+### Other
+
+- fix formatting
+- add `rustfmt.toml`
+- update test snapshot files
+- *(renderer)* allow multiline spans for collumns
+
 ## [0.1.20](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.19...error_snippet-v0.1.20) - 2025-09-30
 
 ### Other
