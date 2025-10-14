@@ -42,9 +42,7 @@ fn formatted_message_debug_pretty() {
         pub name: &'static [&'static str],
     }
 
-    assert_snapshot!(render(Foo {
-        name: &["bar", "baz"]
-    }));
+    assert_snapshot!(render(Foo { name: &["bar", "baz"] }));
 }
 
 #[test]

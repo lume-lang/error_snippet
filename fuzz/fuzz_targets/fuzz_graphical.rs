@@ -1,6 +1,7 @@
 #![no_main]
 
-use std::{ops::Range, sync::Arc};
+use std::ops::Range;
+use std::sync::Arc;
 
 use arbitrary::Arbitrary;
 use error_snippet::*;

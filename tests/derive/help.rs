@@ -24,11 +24,7 @@ fn multiple_lines() {
 #[test]
 fn multiple_helps() {
     #[derive(Debug, Diagnostic)]
-    #[diagnostic(
-        message = "foo",
-        help = "better luck next time!",
-        help = "you'll get there!"
-    )]
+    #[diagnostic(message = "foo", help = "better luck next time!", help = "you'll get there!")]
     struct Foo {}
 
     assert_snapshot!(render(Foo {}));

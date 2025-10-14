@@ -1,11 +1,10 @@
-use crate::{
-    args::DiagnosticArg,
-    diagnostic::{AttrDiagnostic, Severity},
-    fmt::FormattedMessage,
-};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Ident;
+
+use crate::args::DiagnosticArg;
+use crate::diagnostic::{AttrDiagnostic, Severity};
+use crate::fmt::FormattedMessage;
 
 struct LabelIdent {
     severity: Option<Ident>,
@@ -55,24 +54,17 @@ impl AttrDiagnostic {
     /// Gets the value of the `message` attribute, if any was given. If not, raises
     /// an error for the user.
     pub(crate) fn message(&self) -> syn::Result<String> {
-        let arg = self
-            .args
-            .iter()
-            .find(|arg| matches!(arg, DiagnosticArg::Message(_)));
+        let arg = self.args.iter().find(|arg| matches!(arg, DiagnosticArg::Message(_)));
 
         match arg {
             Some(DiagnosticArg::Message(message)) => Ok(message.clone()),
-            _ => Err(self
-                .err("No error message provided. Please use `#[diagnostic(message = \"...\")]`")),
+            _ => Err(self.err("No error message provided. Please use `#[diagnostic(message = \"...\")]`")),
         }
     }
 
     /// Gets the value of the `code` attribute, if any was given. If not, returns `None`.
     fn code(&self) -> Option<String> {
-        let arg = self
-            .args
-            .iter()
-            .find(|arg| matches!(arg, DiagnosticArg::Code(_)));
+        let arg = self.args.iter().find(|arg| matches!(arg, DiagnosticArg::Code(_)));
 
         match arg {
             Some(DiagnosticArg::Code(code)) => Some(code.clone()),
@@ -103,10 +95,7 @@ impl AttrDiagnostic {
 
     /// Gets the source code of the diagnostic, if any was given. If not, returns `None`.
     fn span(&self) -> Option<Ident> {
-        let arg = self
-            .args
-            .iter()
-            .find(|arg| matches!(arg, DiagnosticArg::Span(_)));
+        let arg = self.args.iter().find(|arg| matches!(arg, DiagnosticArg::Span(_)));
 
         match arg {
             Some(DiagnosticArg::Span(span)) => Some(span.clone()),
@@ -116,10 +105,7 @@ impl AttrDiagnostic {
 
     /// Gets the severity of the diagnostic, if any was given. If not, returns `None`.
     fn severity(&self) -> Option<Severity> {
-        let arg = self
-            .args
-            .iter()
-            .find(|arg| matches!(arg, DiagnosticArg::Severity(_)));
+        let arg = self.args.iter().find(|arg| matches!(arg, DiagnosticArg::Severity(_)));
 
         match arg {
             Some(DiagnosticArg::Severity(severity)) => Some(severity.clone()),
@@ -233,8 +219,7 @@ impl AttrDiagnostic {
                         let lit_str = syn::LitStr::new(&label, proc_macro2::Span::call_site());
                         let formatted_str = FormattedMessage::expand(lit_str);
 
-                        let method_name = severity
-                            .unwrap_or_else(|| Ident::new("new", proc_macro2::Span::call_site()));
+                        let method_name = severity.unwrap_or_else(|| Ident::new("new", proc_macro2::Span::call_site()));
 
                         if has_source {
                             quote! {
@@ -279,10 +264,7 @@ impl AttrDiagnostic {
 
     /// Creates the implementation block for the `related` trait function.
     fn related_block(&self) -> syn::Result<TokenStream> {
-        let arg = self
-            .args
-            .iter()
-            .find(|arg| matches!(arg, DiagnosticArg::Related(_, _)));
+        let arg = self.args.iter().find(|arg| matches!(arg, DiagnosticArg::Related(_, _)));
 
         let (related, collection) = match arg {
             Some(DiagnosticArg::Related(related, collection)) => (related.clone(), *collection),
@@ -316,10 +298,7 @@ impl AttrDiagnostic {
 
     /// Creates the implementation block for the `cause` trait function.
     fn cause_block(&self) -> syn::Result<TokenStream> {
-        let arg = self
-            .args
-            .iter()
-            .find(|arg| matches!(arg, DiagnosticArg::Cause(_, _)));
+        let arg = self.args.iter().find(|arg| matches!(arg, DiagnosticArg::Cause(_, _)));
 
         let (cause, collection) = match arg {
             Some(DiagnosticArg::Cause(cause, collection)) => (cause.clone(), *collection),
