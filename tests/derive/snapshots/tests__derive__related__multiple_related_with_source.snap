@@ -1,12 +1,12 @@
 ---
 source: tests/derive/related.rs
-expression: "render(Parent\n{\n    children:\n    vec![Child { source: source.clone(), span: 13..17 }, Child\n    { source: source.clone(), span: 24..30 }]\n})"
+expression: "render(Parent\n{\n    children:\n    vec![Child { source: source.clone(), span: 13..17 }.into(), Child\n    { source: source.clone(), span: 24..30 }.into()]\n})"
 ---
 × error: parent error
       × error: child error
          ╭─[some_file.lm:1:14]
        1 │ fn main() -> void {
-         │              ^^^^ type not allowed
+         ∶              ^^^^ type not allowed
        2 │     return 0;
          ╰──
 
@@ -14,6 +14,6 @@ expression: "render(Parent\n{\n    children:\n    vec![Child { source: source.cl
          ╭─[some_file.lm:2:5]
        1 │ fn main() -> void {
        2 │     return 0;
-         │     ^^^^^^ type not allowed
+         ∶     ^^^^^^ type not allowed
        3 │ }
          ╰──

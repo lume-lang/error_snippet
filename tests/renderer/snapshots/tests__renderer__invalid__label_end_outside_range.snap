@@ -5,5 +5,5 @@ expression: render(message)
 × error: failed to read file
    ╭─[src/test.lm:1:1]
  1 │ abc
-   │ ^^^ label_end_outside_range
+   ∶ ^^^ label_end_outside_range
    ╰──
