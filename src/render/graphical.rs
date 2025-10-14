@@ -1,11 +1,14 @@
-use std::{ops::Range, sync::Arc};
-
-use crate::{render::Renderer, Diagnostic, Help, Label, Severity, Source, Suggestion};
+use std::collections::HashSet;
+use std::fmt::Display;
+use std::ops::Range;
+use std::sync::Arc;
 
 use indexmap::IndexMap;
 use owo_colors::{OwoColorize, Style, Styled};
 
 use super::Formatter;
+use crate::render::Renderer;
+use crate::{Diagnostic, Help, Label, Severity, Source, SpanRange, Suggestion};
 
 const DEFAULT_TERM_WIDTH: usize = 80;
 
@@ -105,7 +108,10 @@ impl ThemeSymbols {
 #[derive(Debug, Clone)]
 pub struct ArrowSymbols {
     /// "─"
-    pub horizontal: char,
+    pub hbar: char,
+
+    /// "┬"
+    pub hbot: char,
 
     /// "│"
     pub vertical: char,
@@ -124,18 +130,23 @@ pub struct ArrowSymbols {
 
     /// "^"
     pub arrow_up: char,
+
+    /// ">"
+    pub arrow_right: char,
 }
 
 impl ArrowSymbols {
     pub fn unicode() -> Self {
         ArrowSymbols {
-            horizontal: '─',
+            hbar: '─',
+            hbot: '┬',
             vertical: '│',
             vertical_break: '∶',
             top_left: '╭',
             bottom_left: '╰',
             horizontal_right: '├',
             arrow_up: '^',
+            arrow_right: '▶',
         }
     }
 }
@@ -158,14 +169,6 @@ impl Theme {
             arrows: ArrowSymbols::unicode(),
         }
     }
-}
-
-struct LabelGroup {
-    /// Defines all the labels in the group
-    pub labels: Vec<Label>,
-
-    /// Defines the common source for the labels
-    pub source: Arc<dyn Source>,
 }
 
 /// An implementation of [`Renderer`] which displays diagnostics in a graphical way
@@ -215,11 +218,7 @@ impl Default for GraphicalRenderer {
 }
 
 impl Renderer for GraphicalRenderer {
-    fn render_fmt(
-        &mut self,
-        f: &mut Formatter<'_>,
-        diagnostic: &dyn Diagnostic,
-    ) -> std::fmt::Result {
+    fn render_fmt(&mut self, f: &mut Formatter<'_>, diagnostic: &dyn Diagnostic) -> std::fmt::Result {
         self.render_diagnostic(f, diagnostic)
     }
 }
@@ -266,37 +265,6 @@ impl GraphicalRenderer {
         }
     }
 
-    /// Styles a substring the given value with the provided style.
-    ///
-    /// If colors are disabled on the renderer, no styles are applied and the
-    /// value is kept unstyled.
-    fn style_substring(&self, val: impl Into<String>, span: Span, style: Style) -> Styled<String> {
-        let val: String = val.into();
-
-        if !self.use_colors {
-            return Style::new().style(val);
-        }
-
-        let span: Range<usize> = if span.is_multiline() {
-            span.start.column..val.len()
-        } else {
-            span.start.column..span.end.column
-        };
-
-        let Some((middle, after)) = val.split_at_checked(span.end) else {
-            return style.style(val);
-        };
-
-        let middle = middle.to_string();
-        let Some((before, middle)) = middle.split_at_checked(span.start) else {
-            return style.style(middle);
-        };
-
-        let styled = format!("{}{}{}", before, middle.style(style), after);
-
-        Style::new().style(styled)
-    }
-
     /// Determines how much padding to use for the gutter of the
     /// given source code. The gutter margin is included in the result.
     fn gutter_size_of(&self, source: &str) -> usize {
@@ -320,11 +288,7 @@ impl GraphicalRenderer {
     ///     ╰──
     ///    help: doc comments are only allowed on definitions
     /// ```
-    fn render_diagnostic(
-        &mut self,
-        f: &mut impl std::fmt::Write,
-        diagnostic: &dyn Diagnostic,
-    ) -> std::fmt::Result {
+    fn render_diagnostic(&mut self, f: &mut impl std::fmt::Write, diagnostic: &dyn Diagnostic) -> std::fmt::Result {
         owo_colors::with_override(self.use_colors, || {
             self.render_header(f, diagnostic)?;
             self.render_source(f, diagnostic)?;
@@ -341,11 +305,7 @@ impl GraphicalRenderer {
     /// ```text
     ///   × error[E4012]: invalid doc comment found
     /// ```
-    fn render_header(
-        &self,
-        f: &mut impl std::fmt::Write,
-        diagnostic: &dyn Diagnostic,
-    ) -> std::fmt::Result {
+    fn render_header(&self, f: &mut impl std::fmt::Write, diagnostic: &dyn Diagnostic) -> std::fmt::Result {
         let severity_symbol = self.theme.symbols.from_severity(diagnostic.severity());
         let severity_style = self.theme.style.from_severity(diagnostic.severity());
         let severity_str = diagnostic.severity().to_string();
@@ -374,17 +334,13 @@ impl GraphicalRenderer {
     ///    28 │    /// When creating an array with a set capacity, it's length will still be zero.
     ///    29 │    pub fn with_capacity(capacity: UInt64) -> Array<T> {
     ///       │                                              ^^^^^^^^ expected type `Array<T>` found here
-    ///       ∶
+    ///       ·
     ///    34 │
     ///    35 │        return true;
     ///       │        ^^^^^^^^^^^^ expected `Array<T>`, found `Boolean`
     ///       ╰──
     /// ```
-    fn render_source(
-        &mut self,
-        f: &mut impl std::fmt::Write,
-        diagnostic: &dyn Diagnostic,
-    ) -> std::fmt::Result {
+    fn render_source(&mut self, f: &mut impl std::fmt::Write, diagnostic: &dyn Diagnostic) -> std::fmt::Result {
         for cause in diagnostic.causes() {
             self.current_indent += 1;
 
@@ -417,17 +373,14 @@ impl GraphicalRenderer {
 
                 let source_name = source.name().map(|n| n.to_string());
 
-                if let Some(group) = label_groups.get_mut(&source_name) {
-                    group.labels.push(label);
-                } else {
-                    label_groups.insert(
-                        source_name,
-                        LabelGroup {
-                            source,
-                            labels: vec![label],
-                        },
-                    );
-                }
+                label_groups
+                    .entry(source_name)
+                    .or_insert(LabelGroup {
+                        labels: Vec::new(),
+                        source,
+                    })
+                    .labels
+                    .push(label);
             }
 
             for (_, group) in label_groups {
@@ -442,6 +395,258 @@ impl GraphicalRenderer {
             writeln!(f)?;
 
             self.current_indent -= 1;
+        }
+
+        Ok(())
+    }
+
+    /// Renders a label group context with one-or-more labels, all sharing the same source file.
+    ///
+    /// # Example
+    ///
+    /// ```text
+    ///    28 │    /// When creating an array with a set capacity, it's length will still be zero.
+    ///    29 │    pub fn with_capacity(capacity: UInt64) -> Array<T> {
+    ///       │                                              ^^^^^^^^ expected type `Array<T>` found here
+    ///       ·
+    ///    34 │
+    ///    35 │        return true;
+    ///       │        ^^^^^^^^^^^^ expected `Array<T>`, found `Boolean`
+    /// ```
+    fn render_label_context(
+        &self,
+        f: &mut impl std::fmt::Write,
+        context: LabelContext,
+        severity: Severity,
+    ) -> std::fmt::Result {
+        let source_content = context.source.content();
+        let gutter_size = self.gutter_size_of(&source_content);
+
+        let joined_span = context.max_span();
+        let span = coords_of_span(&source_content, joined_span.clone());
+
+        let style = self.theme.style.from_severity(severity);
+        let arrows = &self.theme.arrows;
+
+        // Render all the labels in in the group, along with joiners in the vertical gutter.
+        //
+        //  28 │    /// When creating an array with a set capacity, it's length will still be zero.
+        //  29 │    pub fn with_capacity(capacity: UInt64) -> Array<T> {
+        //     │                                              ^^^^^^^^ expected type `Array<T>` found here
+        //     ·
+        //  34 │
+        //  35 │        return true;
+        //     │        ^^^^^^^^^^^^ expected `Array<T>`, found `Boolean`
+        let content = extract_with_context(&source_content, joined_span.0, self.context_lines);
+
+        let lines = content.lines().collect::<Vec<_>>();
+        let line_count = lines.len();
+
+        // Save all the coordinates of each label span, since we'll be needing them in this function.
+        let labels = context
+            .children
+            .iter()
+            .map(|l| (l, coords_of_span(&source_content, l.range.0.clone())))
+            .collect::<Vec<_>>();
+
+        for (idx, line) in lines.into_iter().enumerate() {
+            let line_num = span.start.line.saturating_sub(self.context_lines) + idx + 1;
+
+            let mut line_labels = labels
+                .iter()
+                .filter(|(_, s)| !s.is_multiline() && s.start.line == span.start.line + idx)
+                .collect::<Vec<_>>();
+
+            line_labels.sort_by(|a, b| b.1.start.column.cmp(&a.1.start.column));
+
+            self.render_snippet_line_gutter(f, gutter_size, line_num)?;
+
+            if span.is_multiline() {
+                match idx {
+                    0 => write!(
+                        f,
+                        "{}{}{} ",
+                        arrows.top_left.style(style),
+                        arrows.hbar.style(style),
+                        arrows.arrow_right.style(style)
+                    )?,
+                    n if n == line_count - 1 => write!(
+                        f,
+                        "{}{}{} ",
+                        arrows.horizontal_right.style(style),
+                        arrows.hbar.style(style),
+                        arrows.arrow_right.style(style)
+                    )?,
+                    _ => write!(f, "{}   ", arrows.vertical.style(style))?,
+                }
+            }
+
+            if self.highlight_source {
+                let mut style_line = StyledText::new(line.to_string());
+
+                for (label, label_span) in &line_labels {
+                    let severity = label.severity.unwrap_or(severity);
+                    let style = self.theme.style.from_severity(severity);
+
+                    style_line.style_span(label_span.start.column..label_span.end.column, style);
+                }
+
+                // Style the labelled span correctly, if no child labels are directly
+                // defined on the line itself.
+                if !span.is_multiline() && line_num - 1 == span.start.line && line_labels.is_empty() {
+                    let severity = context.parent.severity.unwrap_or(severity);
+                    let style = self.theme.style.from_severity(severity);
+
+                    style_line.style_span(span.start.column..span.end.column, style);
+                }
+
+                writeln!(f, "{style_line}")?;
+            } else {
+                writeln!(f, "{line}")?;
+            }
+
+            if !span.is_multiline() && line_num - 1 == span.start.line && line_labels.is_empty() {
+                self.render_line_labels(f, severity, vec![&(&context.parent, span)], gutter_size, false)?;
+            } else {
+                self.render_line_labels(f, severity, line_labels, gutter_size, true)?;
+            }
+        }
+
+        if span.is_multiline() {
+            self.render_snippet_break(f, gutter_size)?;
+            writeln!(f, "{}", arrows.vertical.style(style))?;
+
+            self.render_snippet_line_empty_gutter(f, gutter_size)?;
+            writeln!(
+                f,
+                "{} {}",
+                arrows.bottom_left.style(style),
+                context.parent.message.style(style)
+            )?;
+        }
+
+        Ok(())
+    }
+
+    /// Renders the labels under a given line, so each labelled span is underlined and
+    /// directing the reader to the label message.
+    ///
+    /// # Example
+    ///
+    /// ```text
+    ///   · │       ─┬    ┬
+    ///   · │        │    ╰─ This has type of Str
+    ///   · │        ╰─ This has type of Void
+    /// ```
+    fn render_line_labels(
+        &self,
+        f: &mut impl std::fmt::Write,
+        severity: Severity,
+        labels: Vec<&(&Label, Span)>,
+        gutter_size: usize,
+        is_multiline: bool,
+    ) -> std::fmt::Result {
+        if labels.is_empty() {
+            return Ok(());
+        }
+
+        // If there is only a single label on the line, we can render it more compactly.
+        let render_single_line = labels.len() == 1;
+
+        let style = self.theme.style.from_severity(severity);
+        let arrows = &self.theme.arrows;
+
+        // Write the underlines of each labelled span of the snippet.
+        //
+        //  2 │     () => 5,
+        //    │     ─┬    ┬
+        self.render_snippet_break(f, gutter_size)?;
+        if is_multiline {
+            write!(f, "{}   ", arrows.vertical.style(style))?;
+        }
+
+        let underline_len = labels.iter().map(|(_, s)| s.end.column).max().unwrap_or_default();
+        let mut underline_str = StyledText::new(" ".repeat(underline_len));
+
+        for (label, span) in &labels {
+            let severity = label.severity.unwrap_or(severity);
+            let style = self.theme.style.from_severity(severity);
+
+            for offset in span.columns() {
+                let c = if render_single_line {
+                    arrows.arrow_up
+                } else if offset == span.columns().end - 1 {
+                    arrows.hbot
+                } else {
+                    arrows.hbar
+                };
+
+                str_set_char(&mut underline_str.str, offset, c);
+            }
+
+            underline_str.style_span(span.columns(), style);
+
+            if render_single_line {
+                underline_str.append(&format!(" {}", label.message), style);
+            }
+        }
+
+        if self.use_colors {
+            writeln!(f, "{underline_str}")?;
+        } else {
+            writeln!(f, "{}", underline_str.str)?;
+        }
+
+        // After writing the underlines, we render the lines which go below it to
+        // point to the message of each underline.
+        //
+        //    │        │    ╰── This is of type Nat
+        //    │        ╰── This is of type Nil
+        if !render_single_line {
+            let mut label_text_lines = labels
+                .iter()
+                .map(|(_, span)| StyledText::new(" ".repeat(span.end.column + 1)))
+                .collect::<Vec<_>>();
+
+            for (idx, (label, span)) in labels.iter().enumerate() {
+                let severity = label.severity.unwrap_or(severity);
+                let style = self.theme.style.from_severity(severity);
+
+                let last_column = span.end.column.saturating_sub(1);
+
+                #[allow(clippy::needless_range_loop, reason = "not looping entire collection")]
+                for line_idx in 0..idx {
+                    // Sets the vertical line in all preceding lines from the current one.
+                    str_set_char(&mut label_text_lines[line_idx].str, last_column, arrows.vertical);
+
+                    label_text_lines[line_idx].style_span(last_column..span.end.column, style);
+                }
+
+                let line = &mut label_text_lines[idx];
+
+                str_set_char(&mut line.str, last_column, arrows.bottom_left);
+                str_set_char(&mut line.str, span.end.column, arrows.hbar);
+                str_set_char(&mut line.str, span.end.column + 1, arrows.hbar);
+
+                line.style_span(last_column..span.end.column + 1, style);
+
+                line.append(" ", style);
+                line.append(&label.message, style);
+            }
+
+            for label_text_line in label_text_lines {
+                self.render_snippet_break(f, gutter_size)?;
+
+                if is_multiline {
+                    write!(f, "{}   ", arrows.vertical.style(style))?;
+                }
+
+                if self.use_colors {
+                    writeln!(f, "{label_text_line}")?;
+                } else {
+                    writeln!(f, "{}", label_text_line.str)?;
+                }
+            }
         }
 
         Ok(())
@@ -497,12 +702,15 @@ impl GraphicalRenderer {
         //  34 │
         //  35 │        return true;
         //     │        ^^^^^^^^^^^^ expected `Array<T>`, found `Boolean`
-        for (index, label) in group.labels.iter().enumerate() {
-            self.render_label(f, label, source.clone(), severity, gutter_size)?;
+        let contexts = self.group_overlapping_labels(Some(source.clone()), group.labels.into_iter());
+        let count = contexts.len();
+
+        for (idx, context) in contexts.into_iter().enumerate() {
+            self.render_label_context(f, context, severity)?;
 
             // Unless we're at the last label, print a vertical break in the gutter.
-            if index < group.labels.len() - 1 {
-                self.render_snippet_break(f, gutter_size)?;
+            if idx < count - 1 {
+                self.render_snippet_breakln(f, gutter_size)?;
             }
         }
 
@@ -511,68 +719,6 @@ impl GraphicalRenderer {
         //    ╰──
         //
         self.render_snippet_footer(f, gutter_size)
-    }
-
-    /// Renders a single label without any header or footer attached.
-    ///
-    /// ```text
-    ///  28 │    /// When creating an array with a set capacity, it's length will still be zero.
-    ///  29 │    pub fn with_capacity(capacity: UInt64) -> Array<T> {
-    ///     │                                              ^^^^^^^^ expected type `Array<T>` found here
-    /// ```
-    fn render_label(
-        &self,
-        f: &mut impl std::fmt::Write,
-        label: &Label,
-        source: Arc<dyn Source>,
-        severity: Severity,
-        padding: usize,
-    ) -> std::fmt::Result {
-        // If the label has a severity defined, use that instead of the diagnostic
-        // severity. If not, use the severity of the diagnostic.
-        let severity = match label.severity() {
-            Some(sev) => sev,
-            None => severity,
-        };
-
-        let severity_style = self.theme.style.from_severity(severity);
-
-        let source_content = source.content();
-        let span = coords_of_span(&source_content, label.range().clone());
-        let first_line_num = span.start.line.saturating_sub(self.context_lines);
-
-        let (snipped_content, center_line) =
-            extract_with_context_offset(&source_content, label.range().clone(), self.context_lines);
-
-        for (idx, snipped_line) in snipped_content.lines().enumerate() {
-            let line_num = first_line_num + idx;
-
-            let snippet_line = if self.highlight_source && line_num == center_line {
-                self.style_substring(snipped_line, span, severity_style)
-            } else {
-                Style::new().style(snipped_line.to_string())
-            };
-
-            self.render_snippet_line(f, padding, snippet_line, line_num + 1)?;
-
-            if line_num == center_line {
-                let marker_columns = if span.is_multiline() || span.is_empty() {
-                    span.start.column..snipped_line.len()
-                } else {
-                    span.start.column..span.end.column
-                };
-
-                self.render_line_marker(
-                    f,
-                    severity_style,
-                    &marker_columns,
-                    label.message(),
-                    padding,
-                )?;
-            }
-        }
-
-        Ok(())
     }
 
     /// Renders the header of a source snippet.
@@ -595,7 +741,7 @@ impl GraphicalRenderer {
             "{}{}{}",
             " ".repeat(padding),
             self.theme.arrows.top_left,
-            self.theme.arrows.horizontal,
+            self.theme.arrows.hbar,
         )?;
 
         if let Some(name) = name {
@@ -604,7 +750,7 @@ impl GraphicalRenderer {
             writeln!(
                 f,
                 "{}",
-                std::iter::repeat_n(self.theme.arrows.horizontal, 10).collect::<String>()
+                std::iter::repeat_n(self.theme.arrows.hbar, 10).collect::<String>()
             )
         }
     }
@@ -631,11 +777,7 @@ impl GraphicalRenderer {
     /// ```text
     //       │
     /// ```
-    fn render_snippet_line_empty_gutter(
-        &self,
-        f: &mut impl std::fmt::Write,
-        padding: usize,
-    ) -> std::fmt::Result {
+    fn render_snippet_line_empty_gutter(&self, f: &mut impl std::fmt::Write, padding: usize) -> std::fmt::Result {
         self.render_snippet_gutter(f, padding, "", self.theme.arrows.vertical)
     }
 
@@ -680,11 +822,16 @@ impl GraphicalRenderer {
     /// ```text
     //      ∶
     /// ```
-    fn render_snippet_break(
-        &self,
-        f: &mut impl std::fmt::Write,
-        padding: usize,
-    ) -> std::fmt::Result {
+    fn render_snippet_break(&self, f: &mut impl std::fmt::Write, padding: usize) -> std::fmt::Result {
+        self.render_snippet_gutter(f, padding, "", self.theme.arrows.vertical_break)
+    }
+
+    /// Renders a single vertical break in a source snippet.
+    ///
+    /// ```text
+    //      ∶
+    /// ```
+    fn render_snippet_breakln(&self, f: &mut impl std::fmt::Write, padding: usize) -> std::fmt::Result {
         self.render_snippet_gutter(f, padding, "", self.theme.arrows.vertical_break)?;
 
         writeln!(f)
@@ -695,11 +842,7 @@ impl GraphicalRenderer {
     /// ```text
     //    ╰──
     /// ```
-    fn render_snippet_footer(
-        &self,
-        f: &mut impl std::fmt::Write,
-        padding: usize,
-    ) -> std::fmt::Result {
+    fn render_snippet_footer(&self, f: &mut impl std::fmt::Write, padding: usize) -> std::fmt::Result {
         self.write_ident(f)?;
         self.write_padding(f, padding)?;
 
@@ -707,7 +850,7 @@ impl GraphicalRenderer {
             f,
             "{}{}",
             self.theme.arrows.bottom_left,
-            std::iter::repeat_n(self.theme.arrows.horizontal, 2).collect::<String>()
+            std::iter::repeat_n(self.theme.arrows.hbar, 2).collect::<String>()
         )
     }
 
@@ -732,48 +875,6 @@ impl GraphicalRenderer {
         )
     }
 
-    /// Renders the marker underneath a labeled line.
-    ///
-    /// ```text
-    ///           ^^^^^^^^^^^^ expected `Array<T>`, found `Boolean`
-    /// ```
-    fn render_line_marker(
-        &self,
-        f: &mut impl std::fmt::Write,
-        style: Style,
-        columns: &Range<usize>,
-        message: &str,
-        padding: usize,
-    ) -> std::fmt::Result {
-        self.render_line_marker_arrows(f, style, columns, padding)?;
-
-        writeln!(f, " {message}")
-    }
-
-    /// Renders the arrow markers underneath a labeled line.
-    ///
-    /// ```text
-    ///           ^^^^^^^^^^^^
-    /// ```
-    fn render_line_marker_arrows(
-        &self,
-        f: &mut impl std::fmt::Write,
-        style: Style,
-        columns: &Range<usize>,
-        padding: usize,
-    ) -> std::fmt::Result {
-        self.render_snippet_line_empty_gutter(f, padding)?;
-        self.write_padding(f, columns.start)?;
-
-        let marker_len = columns.end.saturating_sub(columns.start).max(1);
-
-        for _ in 0..marker_len {
-            write!(f, "{}", self.style(&self.theme.arrows.arrow_up, style))?;
-        }
-
-        Ok(())
-    }
-
     /// Renders the footer of a diagnostic message.
     ///
     /// # Example
@@ -782,11 +883,7 @@ impl GraphicalRenderer {
     ///   help: doc comments are only allowed on definitions
     ///   help: you can use triple forward-slash to denote doc comments
     /// ```
-    fn render_footer(
-        &self,
-        f: &mut impl std::fmt::Write,
-        diagnostic: &dyn Diagnostic,
-    ) -> std::fmt::Result {
+    fn render_footer(&self, f: &mut impl std::fmt::Write, diagnostic: &dyn Diagnostic) -> std::fmt::Result {
         if let Some(help) = diagnostic.help() {
             for line in help {
                 self.render_help(f, &line)?;
@@ -839,12 +936,7 @@ impl GraphicalRenderer {
             self.write_ident(f)?;
 
             if i == 0 {
-                writeln!(
-                    f,
-                    "{}{}",
-                    self.style(&help_gutter, self.theme.style.help),
-                    line
-                )?;
+                writeln!(f, "{}{}", self.style(&help_gutter, self.theme.style.help), line)?;
             } else {
                 writeln!(f, "{}{}", " ".repeat(help_padding), line)?;
             }
@@ -926,7 +1018,7 @@ impl GraphicalRenderer {
 
             // Unless we're at the last suggestion, print a vertical break in the gutter.
             if index < suggestion_len - 1 {
-                self.render_snippet_break(f, padding)?;
+                self.render_snippet_breakln(f, padding)?;
             }
         }
 
@@ -1043,12 +1135,7 @@ impl GraphicalRenderer {
             Suggestion::Deletion { .. } => {
                 let [before, middle, after] = split_str_at(&line, vec![span.start, span.end]);
 
-                format!(
-                    "{}{}{}",
-                    before,
-                    self.style(&middle, self.theme.style.deletion),
-                    after
-                )
+                format!("{}{}{}", before, self.style(&middle, self.theme.style.deletion), after)
             }
             Suggestion::Insertion { value, .. } => {
                 let [before, middle, after] = split_str_at(&line, vec![span.start, span.end]);
@@ -1076,6 +1163,145 @@ impl GraphicalRenderer {
 
         Box::new(formatted) as Box<dyn std::fmt::Display>
     }
+
+    /// Groups a list of [`Label`]s into a tree of [`Label`]s, where each parent
+    /// label overlaps with all it's direct child nodes.
+    fn group_overlapping_labels(
+        &self,
+        diag_source: Option<Arc<dyn Source>>,
+        labels: impl Iterator<Item = Label>,
+    ) -> Vec<LabelContext> {
+        let mut labels = labels.collect::<Vec<_>>();
+        labels.sort_unstable_by_key(|l| l.range().0.start);
+
+        let mut contexts = Vec::with_capacity(labels.len());
+        let mut visited = HashSet::new();
+
+        for (idx, parent) in labels.iter().cloned().enumerate() {
+            // If no source code is attached to the label itself, see if
+            // a source is attached to the parent diagnostic.
+            //
+            // If no source is found on either, skip over the label entirely.
+            let Some(parent_source) = parent.source.clone().or(diag_source.clone()) else {
+                continue;
+            };
+
+            if !visited.insert(idx) {
+                continue;
+            }
+
+            let parent_span = parent.range.0.clone();
+            let mut context = LabelContext {
+                parent,
+                children: Vec::new(),
+                source: parent_source.clone(),
+            };
+
+            // If the parent label only spans a single line, it cannot contain any children.
+            if !coords_of_span(parent_source.content().as_ref(), parent_span.clone()).is_multiline() {
+                contexts.push(context);
+
+                continue;
+            }
+
+            for (idx, child) in labels.iter().enumerate().skip(idx + 1) {
+                let Some(child_source) = child.source.clone().or(diag_source.clone()) else {
+                    continue;
+                };
+
+                // Group the labels into groups where all elements have the same source file.
+                // This helps prevent multiple label headers in a row from defining the same file path.
+                if child_source.name() != parent_source.name() {
+                    continue;
+                }
+
+                if parent_span.contains(&child.range.0.start) && visited.insert(idx) {
+                    context.children.push(child.clone());
+                }
+            }
+
+            contexts.push(context);
+        }
+
+        contexts
+    }
+}
+
+#[derive(Debug)]
+struct LabelContext {
+    /// Defines the root label within the context.
+    pub parent: Label,
+
+    /// Defines all child labels, which are contained within the parent.
+    pub children: Vec<Label>,
+
+    /// Defines the common source for the labels.
+    pub source: Arc<dyn Source>,
+}
+
+impl LabelContext {
+    /// Gets the span which contains all labels within the context, including the parent.
+    pub fn max_span(&self) -> SpanRange {
+        let start = self.parent.range.0.start;
+        let end = self.children.iter().map(|c| c.range.0.end).max().unwrap_or(0);
+
+        SpanRange(start..end.max(self.parent.range().0.end))
+    }
+}
+
+struct LabelGroup {
+    /// Defines all the labels in the group
+    pub labels: Vec<Label>,
+
+    /// Defines the common source for the labels
+    pub source: Arc<dyn Source>,
+}
+
+/// Defines a text span, where each character can be individually styled.
+#[derive(Debug, Clone)]
+struct StyledText {
+    str: String,
+    chars: Vec<Style>,
+}
+
+impl StyledText {
+    pub fn new(str: String) -> Self {
+        Self {
+            chars: vec![Style::new(); str.len()],
+            str,
+        }
+    }
+
+    /// Appends the given string, without any specific styling.
+    pub fn append(&mut self, str: &str, style: Style) {
+        self.chars.extend(vec![style; str.len()]);
+        self.str.push_str(str);
+    }
+
+    /// Applies a style to a span of characters.
+    pub fn style_span(&mut self, span: Range<usize>, style: Style) {
+        for idx in span {
+            let Some(s) = self.chars.get_mut(idx) else {
+                break;
+            };
+
+            *s = style;
+        }
+    }
+
+    pub fn render(self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
+        for (c, style) in self.str.chars().zip(self.chars.into_iter()) {
+            write!(f, "{}", c.style(style))?;
+        }
+
+        Ok(())
+    }
+}
+
+impl Display for StyledText {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.clone().render(f)
+    }
 }
 
 /// Gets the width of the current terminal window.
@@ -1094,6 +1320,21 @@ fn terminal_width() -> usize {
 
     #[cfg(not(feature = "termsize"))]
     DEFAULT_TERM_WIDTH
+}
+
+/// Changes a single character inside the given [`String`], at the offset `offset`.
+///
+/// The offset defines a character offset, not a byte offset. The function supports
+/// UTF-8, but it does come at the cost of having a time-complexity of **O(n)**, where
+/// `n` is the given offset.
+fn str_set_char(str: &mut String, offset: usize, c: char) -> bool {
+    let Some(char_range) = str.char_indices().nth(offset).map(|(i, c)| (i..i + c.len_utf8())) else {
+        return false;
+    };
+
+    str.replace_range(char_range, &c.to_string());
+
+    true
 }
 
 /// Splits the given string into `N` slices, where each index defines
@@ -1130,12 +1371,18 @@ struct Span {
 }
 
 impl Span {
-    pub fn is_multiline(self) -> bool {
-        self.start.line != self.end.line
+    pub fn columns(self) -> Range<usize> {
+        debug_assert_eq!(self.start.line, self.end.line);
+
+        if self.start.column > self.end.column {
+            return self.start.column..self.start.column + 1;
+        }
+
+        self.start.column..self.end.column
     }
 
-    pub fn is_empty(self) -> bool {
-        self.start.line >= self.end.line && self.start.column >= self.end.column
+    pub fn is_multiline(self) -> bool {
+        self.start.line != self.end.line
     }
 }
 
@@ -1152,7 +1399,12 @@ fn coords_of_span(str: &str, span: impl Into<Range<usize>>) -> Span {
 /// Gets the line number and column number which contains the character at the given index.
 fn coords_of_idx(str: &str, index: usize) -> Coord {
     if index > str.len() {
-        return Coord::default();
+        let line_cnt = str.lines().count();
+
+        return Coord {
+            line: line_cnt.saturating_sub(1),
+            column: str.lines().last().map(|l| l.len()).unwrap_or_default(),
+        };
     }
 
     let mut line = 0;
@@ -1188,7 +1440,7 @@ mod coords_of_idx_tests {
         let Coord { line, column } = coords_of_idx(source, 12);
 
         assert_eq!(line, 0);
-        assert_eq!(column, 0);
+        assert_eq!(column, 10);
     }
 
     #[test]
@@ -1251,11 +1503,7 @@ mod coords_of_idx_tests {
 /// let c = a + b;
 /// let d = c * 2;"#);
 /// ```
-pub fn extract_with_context(
-    input: &str,
-    range: impl Into<Range<usize>>,
-    context_lines: usize,
-) -> &str {
+pub fn extract_with_context(input: &str, range: impl Into<Range<usize>>, context_lines: usize) -> &str {
     let (slice, _) = extract_with_context_offset(input, range, context_lines);
 
     slice
@@ -1286,11 +1534,7 @@ pub fn extract_with_context(
 /// let c = a + b;
 /// let d = c * 2;"#);
 /// ```
-pub fn extract_with_context_offset(
-    input: &str,
-    range: impl Into<Range<usize>>,
-    context_lines: usize,
-) -> (&str, usize) {
+pub fn extract_with_context_offset(input: &str, range: impl Into<Range<usize>>, context_lines: usize) -> (&str, usize) {
     let range: Range<usize> = range.into();
 
     let mut line_start = 0;
@@ -1319,9 +1563,7 @@ pub fn extract_with_context_offset(
     if matching_lines.is_empty() {
         // Get the end of the context window, if possible.
         // Otherwise, just return the entire string.
-        let last_line_span = line_spans
-            .get(context_lines * 2 + 1)
-            .or_else(|| line_spans.last());
+        let last_line_span = line_spans.get(context_lines * 2 + 1).or_else(|| line_spans.last());
 
         let last_line_idx = last_line_span.map(|s| s.end).unwrap_or_default();
 
@@ -1375,10 +1617,7 @@ mod extract_with_context_offset_tests {
         let source = "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;";
         let (snipped, offset) = extract_with_context_offset(source, 60..71, 2);
 
-        assert_eq!(
-            snipped,
-            "let c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;"
-        );
+        assert_eq!(snipped, "let c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;");
         assert_eq!(offset, 4);
     }
 
