@@ -446,7 +446,7 @@ impl GraphicalRenderer {
         let labels = context
             .children
             .iter()
-            .map(|l| (l, coords_of_span(&source_content, l.range.0.clone())))
+            .map(|(_, l)| (l, coords_of_span(&source_content, l.range.0.clone())))
             .collect::<Vec<_>>();
 
         for (idx, line) in lines.into_iter().enumerate() {
@@ -1171,13 +1171,13 @@ impl GraphicalRenderer {
         diag_source: Option<Arc<dyn Source>>,
         labels: impl Iterator<Item = Label>,
     ) -> Vec<LabelContext> {
-        let mut labels = labels.collect::<Vec<_>>();
-        labels.sort_unstable_by_key(|l| l.range().0.start);
+        let mut labels = labels.into_iter().enumerate().collect::<Vec<(usize, Label)>>();
+        labels.sort_unstable_by_key(|(_, l)| l.range().0.start);
 
         let mut contexts = Vec::with_capacity(labels.len());
         let mut visited = HashSet::new();
 
-        for (idx, parent) in labels.iter().cloned().enumerate() {
+        for (idx, (pos, parent)) in labels.iter().cloned().enumerate() {
             // If no source code is attached to the label itself, see if
             // a source is attached to the parent diagnostic.
             //
@@ -1192,6 +1192,7 @@ impl GraphicalRenderer {
 
             let parent_span = parent.range.0.clone();
             let mut context = LabelContext {
+                pos,
                 parent,
                 children: Vec::new(),
                 source: parent_source.clone(),
@@ -1204,7 +1205,7 @@ impl GraphicalRenderer {
                 continue;
             }
 
-            for (idx, child) in labels.iter().enumerate().skip(idx + 1) {
+            for (idx, (pos, child)) in labels.iter().enumerate().skip(idx + 1) {
                 let Some(child_source) = child.source.clone().or(diag_source.clone()) else {
                     continue;
                 };
@@ -1216,11 +1217,18 @@ impl GraphicalRenderer {
                 }
 
                 if parent_span.contains(&child.range.0.start) && visited.insert(idx) {
-                    context.children.push(child.clone());
+                    context.children.push((*pos, child.clone()));
                 }
             }
 
             contexts.push(context);
+        }
+
+        // Sort the labels back to their original ordering.
+        contexts.sort_unstable_by_key(|c| c.pos);
+
+        for context in &mut contexts {
+            context.children.sort_unstable_by_key(|(pos, _)| *pos);
         }
 
         contexts
@@ -1229,11 +1237,14 @@ impl GraphicalRenderer {
 
 #[derive(Debug)]
 struct LabelContext {
+    /// Used for reordering and sorting.
+    pub pos: usize,
+
     /// Defines the root label within the context.
     pub parent: Label,
 
     /// Defines all child labels, which are contained within the parent.
-    pub children: Vec<Label>,
+    pub children: Vec<(usize, Label)>,
 
     /// Defines the common source for the labels.
     pub source: Arc<dyn Source>,
@@ -1243,7 +1254,7 @@ impl LabelContext {
     /// Gets the span which contains all labels within the context, including the parent.
     pub fn max_span(&self) -> SpanRange {
         let start = self.parent.range.0.start;
-        let end = self.children.iter().map(|c| c.range.0.end).max().unwrap_or(0);
+        let end = self.children.iter().map(|(_, c)| c.range.0.end).max().unwrap_or(0);
 
         SpanRange(start..end.max(self.parent.range().0.end))
     }
