@@ -1,4 +1,5 @@
-use std::{ops::Range, sync::Arc};
+use std::ops::Range;
+use std::sync::Arc;
 
 use error_snippet::{NamedSource, WithSource};
 use error_snippet_derive::Diagnostic;
@@ -26,10 +27,7 @@ fn single_label() {
 "#,
     ));
 
-    assert_snapshot!(render(Foo {
-        source,
-        span: 13..17
-    }));
+    assert_snapshot!(render(Foo { source, span: 13..17 }));
 }
 
 #[test]
@@ -111,10 +109,7 @@ fn label_string_source() {
         .to_string(),
     );
 
-    assert_snapshot!(render(Foo {
-        source,
-        span: 13..17,
-    }));
+    assert_snapshot!(render(Foo { source, span: 13..17 }));
 }
 
 #[test]

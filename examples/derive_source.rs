@@ -1,4 +1,5 @@
-use std::{ops::Range, sync::Arc};
+use std::ops::Range;
+use std::sync::Arc;
 
 use error_snippet::{GraphicalRenderer, NamedSource, Renderer};
 use error_snippet_derive::Diagnostic;

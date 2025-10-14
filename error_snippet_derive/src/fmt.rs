@@ -1,6 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, parse::Parser, Ident, LitStr};
+use syn::ext::IdentExt;
+use syn::parse::Parser;
+use syn::{Ident, LitStr};
 
 /// Determines whether the given substring is a debug print format.
 fn is_debug_print(read: &str) -> bool {

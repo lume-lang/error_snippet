@@ -1,6 +1,7 @@
 use syn::{Error, Field, Result};
 
-use crate::{args::DiagnosticArg, diagnostic::Severity};
+use crate::args::DiagnosticArg;
+use crate::diagnostic::Severity;
 
 impl DiagnosticArg {
     pub fn parse_field(field: &Field) -> Result<Option<Self>> {
@@ -14,64 +15,63 @@ impl DiagnosticArg {
         let field_ident = field.ident.as_ref().unwrap();
         let attr_ident = attr_path.get_ident().unwrap();
 
-        let arg = match attr_ident.to_string().as_str() {
-            "span" => {
-                if let syn::Meta::Path(_) = &attr.meta {
-                    DiagnosticArg::Span(field_ident.clone())
-                } else {
-                    return Err(Error::new_spanned(
-                        attr_path,
-                        "expected no arguments; should be formatted `#[span]`",
-                    ));
+        let arg =
+            match attr_ident.to_string().as_str() {
+                "span" => {
+                    if let syn::Meta::Path(_) = &attr.meta {
+                        DiagnosticArg::Span(field_ident.clone())
+                    } else {
+                        return Err(Error::new_spanned(
+                            attr_path,
+                            "expected no arguments; should be formatted `#[span]`",
+                        ));
+                    }
                 }
-            }
-            "related" => match &attr.meta {
-                syn::Meta::Path(_) => DiagnosticArg::Related(field_ident.clone(), false),
-                syn::Meta::List(meta) => Self::parse_related(field_ident, meta)?,
-                _ => {
-                    return Err(Error::new_spanned(
+                "related" => match &attr.meta {
+                    syn::Meta::Path(_) => DiagnosticArg::Related(field_ident.clone(), false),
+                    syn::Meta::List(meta) => Self::parse_related(field_ident, meta)?,
+                    _ => return Err(Error::new_spanned(
                         attr_path,
                         "expected zero-or-one arguments; should be formatted `#[related]` or `#[related(collection)]`",
+                    )),
+                },
+                "cause" => {
+                    if let syn::Meta::Path(_) = &attr.meta {
+                        DiagnosticArg::Cause(field_ident.clone(), false)
+                    } else {
+                        return Err(Error::new_spanned(
+                            attr_path,
+                            "expected no arguments; should be formatted `#[cause]`",
+                        ));
+                    }
+                }
+                "causes" => {
+                    if let syn::Meta::Path(_) = &attr.meta {
+                        DiagnosticArg::Cause(field_ident.clone(), true)
+                    } else {
+                        return Err(Error::new_spanned(
+                            attr_path,
+                            "expected no arguments; should be formatted `#[causes]`",
+                        ));
+                    }
+                }
+                "label" => {
+                    if let syn::Meta::List(meta) = &attr.meta {
+                        Self::parse_label(field_ident, meta)?
+                    } else {
+                        return Err(Error::new_spanned(
+                            attr_path,
+                            "expected list argument; should be formatted `#[label(\"...\")]`",
+                        ));
+                    }
+                }
+                unk => {
+                    return Err(Error::new_spanned(
+                        attr_path,
+                        format!("unknown property attribute: {unk}"),
                     ))
                 }
-            }
-            "cause" => {
-                if let syn::Meta::Path(_) = &attr.meta {
-                    DiagnosticArg::Cause(field_ident.clone(), false)
-                } else {
-                    return Err(Error::new_spanned(
-                        attr_path,
-                        "expected no arguments; should be formatted `#[cause]`",
-                    ));
-                }
-            }
-            "causes" => {
-                if let syn::Meta::Path(_) = &attr.meta {
-                    DiagnosticArg::Cause(field_ident.clone(), true)
-                } else {
-                    return Err(Error::new_spanned(
-                        attr_path,
-                        "expected no arguments; should be formatted `#[causes]`",
-                    ));
-                }
-            }
-            "label" => {
-                if let syn::Meta::List(meta) = &attr.meta {
-                    Self::parse_label(field_ident, meta)?
-                } else {
-                    return Err(Error::new_spanned(
-                        attr_path,
-                        "expected list argument; should be formatted `#[label(\"...\")]`",
-                    ));
-                }
-            }
-            unk => {
-                return Err(Error::new_spanned(
-                    attr_path,
-                    format!("unknown property attribute: {unk}"),
-                ))
-            }
-        };
+            };
 
         Ok(Some(arg))
     }
@@ -105,15 +105,8 @@ impl DiagnosticArg {
 
                     match ident.to_string().as_str() {
                         "source" => has_source = true,
-                        "note" | "help" | "info" | "warning" | "error" => {
-                            severity = Some(Severity(ident.clone()))
-                        }
-                        value => {
-                            return Err(Error::new_spanned(
-                                path,
-                                format!("invalid option, {value}"),
-                            ))
-                        }
+                        "note" | "help" | "info" | "warning" | "error" => severity = Some(Severity(ident.clone())),
+                        value => return Err(Error::new_spanned(path, format!("invalid option, {value}"))),
                     }
                 }
                 syn::Expr::Lit(syn::ExprLit {

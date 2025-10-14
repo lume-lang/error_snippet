@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use error_snippet::{
-    Help, Label, NamedSource, Severity, SimpleDiagnostic, SourceLocation, SourceRange, Suggestion,
-};
+use error_snippet::{Help, Label, NamedSource, Severity, SimpleDiagnostic, SourceLocation, SourceRange, Suggestion};
 use insta::assert_snapshot;
 
 use crate::render;
@@ -92,11 +90,8 @@ fn with_related_labelled() {
         "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;",
     ));
 
-    let related = SimpleDiagnostic::new("failed to read file").with_label(Label::new(
-        Some(source),
-        15..20,
-        "labelled message",
-    ));
+    let related =
+        SimpleDiagnostic::new("failed to read file").with_label(Label::new(Some(source), 15..20, "labelled message"));
 
     let message = SimpleDiagnostic::new("could not compile").add_related(related);
 
@@ -136,25 +131,18 @@ fn with_label_single() {
         "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;",
     ));
 
-    let message = SimpleDiagnostic::new("mismatched types").with_label(Label::new(
-        Some(source),
-        15..20,
-        "labelled message",
-    ));
+    let message =
+        SimpleDiagnostic::new("mismatched types").with_label(Label::new(Some(source), 15..20, "labelled message"));
 
     assert_snapshot!(render(message));
 }
 
 #[test]
 fn with_unnamed_source() {
-    let source =
-        Arc::new("let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;");
+    let source = Arc::new("let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;");
 
-    let message = SimpleDiagnostic::new("mismatched types").with_label(Label::new(
-        Some(source),
-        15..20,
-        "labelled message",
-    ));
+    let message =
+        SimpleDiagnostic::new("mismatched types").with_label(Label::new(Some(source), 15..20, "labelled message"));
 
     assert_snapshot!(render(message));
 }
@@ -167,16 +155,8 @@ fn with_label_multiple() {
     ));
 
     let message = SimpleDiagnostic::new("mismatched types")
-        .with_label(Label::new(
-            Some(source.clone()),
-            15..20,
-            "labelled message 1",
-        ))
-        .with_label(Label::new(
-            Some(source.clone()),
-            30..35,
-            "labelled message 2",
-        ));
+        .with_label(Label::new(Some(source.clone()), 15..20, "labelled message 1"))
+        .with_label(Label::new(Some(source.clone()), 30..35, "labelled message 2"));
 
     assert_snapshot!(render(message));
 }
@@ -194,16 +174,8 @@ fn with_label_different_files() {
     ));
 
     let message = SimpleDiagnostic::new("mismatched types")
-        .with_label(Label::new(
-            Some(source1.clone()),
-            15..20,
-            "labelled message 1",
-        ))
-        .with_label(Label::new(
-            Some(source2.clone()),
-            30..35,
-            "labelled message 2",
-        ));
+        .with_label(Label::new(Some(source1.clone()), 15..20, "labelled message 1"))
+        .with_label(Label::new(Some(source2.clone()), 30..35, "labelled message 2"));
 
     assert_snapshot!(render(message));
 }
@@ -215,11 +187,8 @@ fn with_label_severity_error() {
         "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;",
     ));
 
-    let message = SimpleDiagnostic::new("mismatched types").with_label(Label::error(
-        Some(source),
-        15..20,
-        "labelled message",
-    ));
+    let message =
+        SimpleDiagnostic::new("mismatched types").with_label(Label::error(Some(source), 15..20, "labelled message"));
 
     assert_snapshot!(render(message));
 }
@@ -231,11 +200,8 @@ fn with_label_severity_warning() {
         "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;",
     ));
 
-    let message = SimpleDiagnostic::new("mismatched types").with_label(Label::warning(
-        Some(source),
-        15..20,
-        "labelled message",
-    ));
+    let message =
+        SimpleDiagnostic::new("mismatched types").with_label(Label::warning(Some(source), 15..20, "labelled message"));
 
     assert_snapshot!(render(message));
 }
@@ -247,11 +213,8 @@ fn with_label_severity_info() {
         "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;",
     ));
 
-    let message = SimpleDiagnostic::new("mismatched types").with_label(Label::info(
-        Some(source),
-        15..20,
-        "labelled message",
-    ));
+    let message =
+        SimpleDiagnostic::new("mismatched types").with_label(Label::info(Some(source), 15..20, "labelled message"));
 
     assert_snapshot!(render(message));
 }
@@ -263,11 +226,8 @@ fn with_label_severity_note() {
         "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;",
     ));
 
-    let message = SimpleDiagnostic::new("mismatched types").with_label(Label::note(
-        Some(source),
-        15..20,
-        "labelled message",
-    ));
+    let message =
+        SimpleDiagnostic::new("mismatched types").with_label(Label::note(Some(source), 15..20, "labelled message"));
 
     assert_snapshot!(render(message));
 }
@@ -279,11 +239,8 @@ fn with_label_severity_help() {
         "let a = 1;\nlet b = 2;\nlet c = a + b;\nlet d = c * 2;\nlet e = (d + 3) * 2;",
     ));
 
-    let message = SimpleDiagnostic::new("mismatched types").with_label(Label::help(
-        Some(source),
-        15..20,
-        "labelled message",
-    ));
+    let message =
+        SimpleDiagnostic::new("mismatched types").with_label(Label::help(Some(source), 15..20, "labelled message"));
 
     assert_snapshot!(render(message));
 }
@@ -306,8 +263,8 @@ fn with_help_multiple() {
 
 #[test]
 fn with_help_newlines() {
-    let message = SimpleDiagnostic::new("mismatched types")
-        .with_help("expected type `Array<T>`\n   found type `Boolean`");
+    let message =
+        SimpleDiagnostic::new("mismatched types").with_help("expected type `Array<T>`\n   found type `Boolean`");
 
     assert_snapshot!(render(message));
 }
@@ -339,10 +296,8 @@ fn with_help_suggestion_replace() {
     ));
 
     let message = SimpleDiagnostic::new("invalid value").with_help(
-        Help::new("did you mean `false`?").with_suggestion(Suggestion::replace(
-            SourceRange::new(source.clone(), 33..37),
-            "false",
-        )),
+        Help::new("did you mean `false`?")
+            .with_suggestion(Suggestion::replace(SourceRange::new(source.clone(), 33..37), "false")),
     );
 
     assert_snapshot!(render(message));

@@ -1,4 +1,5 @@
-use std::{ops::Range, sync::Arc};
+use std::ops::Range;
+use std::sync::Arc;
 
 use error_snippet::NamedSource;
 use error_snippet_derive::Diagnostic;
@@ -19,9 +20,7 @@ fn single_related() {
         pub child: error_snippet::Error,
     }
 
-    assert_snapshot!(render(Parent {
-        child: Child {}.into()
-    }));
+    assert_snapshot!(render(Parent { child: Child {}.into() }));
 }
 
 #[test]
@@ -70,11 +69,7 @@ fn related_with_source() {
     ));
 
     assert_snapshot!(render(Parent {
-        children: vec![Child {
-            source,
-            span: 13..17
-        }
-        .into()]
+        children: vec![Child { source, span: 13..17 }.into()]
     }));
 }
 

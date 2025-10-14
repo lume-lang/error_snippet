@@ -1,5 +1,6 @@
-use crate::args::DiagnosticArg;
 use syn::Ident;
+
+use crate::args::DiagnosticArg;
 
 #[derive(Clone, Debug)]
 pub struct Severity(pub Ident);
