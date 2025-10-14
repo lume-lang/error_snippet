@@ -1,6 +1,6 @@
 [package]
 name = "error_snippet"
-version = "0.1.22"
+version = "0.1.23"
 authors = ["Max T. Kristiansen <me@maxtrier.dk>"]
 description = "Library for reporting fancy diagnostics to the console"
 keywords = ["error", "diagnostics", "report", "programming-language"]

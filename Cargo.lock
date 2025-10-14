@@ -88,7 +88,7 @@ dependencies = [
 
 [[package]]
 name = "error_snippet"
-version = "0.1.22"
+version = "0.1.23"
 dependencies = [
  "error_snippet_derive",
  "fxhash",
