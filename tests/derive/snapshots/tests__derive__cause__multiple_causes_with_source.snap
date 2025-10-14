@@ -6,7 +6,7 @@ expression: "render(Parent\n{\n    children:\n    vec![Child { source: source.cl
       × error: child error
          ╭─[some_file.lm:1:14]
        1 │ fn main() -> void {
-         │              ^^^^ type not allowed
+         ∶              ^^^^ type not allowed
        2 │     return 0;
          ╰──
 
@@ -14,6 +14,6 @@ expression: "render(Parent\n{\n    children:\n    vec![Child { source: source.cl
          ╭─[some_file.lm:2:5]
        1 │ fn main() -> void {
        2 │     return 0;
-         │     ^^^^^^ type not allowed
+         ∶     ^^^^^^ type not allowed
        3 │ }
          ╰──

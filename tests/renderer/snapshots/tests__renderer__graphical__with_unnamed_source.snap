@@ -6,6 +6,6 @@ expression: render(message)
    ╭───────────
  1 │ let a = 1;
  2 │ let b = 2;
-   │     ^^^^^ labelled message
+   ∶     ^^^^^ labelled message
  3 │ let c = a + b;
    ╰──

@@ -5,6 +5,6 @@ expression: "render(Foo { source, span: 13..17, })"
 × error: foo
    ╭───────────
  1 │ fn main() -> void {
-   │              ^^^^ label here
+   ∶              ^^^^ label here
  2 │     return 0;
    ╰──
