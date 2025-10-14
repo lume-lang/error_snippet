@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.22](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.21...error_snippet-v0.1.22) - 2025-10-14
+
+### Fixed
+
+- *(renderer)* fix label ordering
+
 ## [0.1.21](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.20...error_snippet-v0.1.21) - 2025-10-14
 
 ### Added
