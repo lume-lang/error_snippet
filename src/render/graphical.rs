@@ -238,6 +238,14 @@ impl GraphicalRenderer {
         }
     }
 
+    fn severity_style(&self, severity: Severity) -> Style {
+        if self.use_colors {
+            self.theme.style.from_severity(severity)
+        } else {
+            Style::new()
+        }
+    }
+
     /// Gets the current indentation to use, in amounts of spaces.
     fn ident(&self) -> usize {
         self.current_indent * self.padding
@@ -307,7 +315,7 @@ impl GraphicalRenderer {
     /// ```
     fn render_header(&self, f: &mut impl std::fmt::Write, diagnostic: &dyn Diagnostic) -> std::fmt::Result {
         let severity_symbol = self.theme.symbols.from_severity(diagnostic.severity());
-        let severity_style = self.theme.style.from_severity(diagnostic.severity());
+        let severity_style = self.severity_style(diagnostic.severity());
         let severity_str = diagnostic.severity().to_string();
 
         self.write_ident(f)?;
@@ -425,7 +433,7 @@ impl GraphicalRenderer {
         let joined_span = context.max_span();
         let span = coords_of_span(&source_content, joined_span.clone());
 
-        let style = self.theme.style.from_severity(severity);
+        let style = self.severity_style(severity);
         let arrows = &self.theme.arrows;
 
         // Render all the labels in in the group, along with joiners in the vertical gutter.
@@ -486,7 +494,7 @@ impl GraphicalRenderer {
 
                 for (label, label_span) in &line_labels {
                     let severity = label.severity.unwrap_or(severity);
-                    let style = self.theme.style.from_severity(severity);
+                    let style = self.severity_style(severity);
 
                     style_line.style_span(label_span.start.column..label_span.end.column, style);
                 }
@@ -495,7 +503,7 @@ impl GraphicalRenderer {
                 // defined on the line itself.
                 if !span.is_multiline() && line_num - 1 == span.start.line && line_labels.is_empty() {
                     let severity = context.parent.severity.unwrap_or(severity);
-                    let style = self.theme.style.from_severity(severity);
+                    let style = self.severity_style(severity);
 
                     style_line.style_span(span.start.column..span.end.column, style);
                 }
@@ -553,7 +561,7 @@ impl GraphicalRenderer {
         // If there is only a single label on the line, we can render it more compactly.
         let render_single_line = labels.len() == 1;
 
-        let style = self.theme.style.from_severity(severity);
+        let style = self.severity_style(severity);
         let arrows = &self.theme.arrows;
 
         // Write the underlines of each labelled span of the snippet.
@@ -570,7 +578,7 @@ impl GraphicalRenderer {
 
         for (label, span) in &labels {
             let severity = label.severity.unwrap_or(severity);
-            let style = self.theme.style.from_severity(severity);
+            let style = self.severity_style(severity);
 
             for offset in span.columns() {
                 let c = if render_single_line {
@@ -610,7 +618,7 @@ impl GraphicalRenderer {
 
             for (idx, (label, span)) in labels.iter().enumerate() {
                 let severity = label.severity.unwrap_or(severity);
-                let style = self.theme.style.from_severity(severity);
+                let style = self.severity_style(severity);
 
                 let last_column = span.end.column.saturating_sub(1);
 
