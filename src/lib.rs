@@ -1,4 +1,6 @@
-use std::{fmt::Display, ops::Range, sync::Arc};
+use std::fmt::Display;
+use std::ops::Range;
+use std::sync::Arc;
 
 pub mod handler;
 pub mod render;
@@ -225,11 +227,7 @@ impl Label {
     /// assert_eq!(label.message(), "could not find method 'invok'");
     /// assert_eq!(label.severity(), None);
     /// ```
-    pub fn new(
-        source: Option<Arc<dyn Source>>,
-        range: impl Into<SpanRange>,
-        message: impl Into<String>,
-    ) -> Self {
+    pub fn new(source: Option<Arc<dyn Source>>, range: impl Into<SpanRange>, message: impl Into<String>) -> Self {
         Self {
             source,
             range: range.into(),
@@ -258,11 +256,7 @@ impl Label {
     /// assert_eq!(label.message(), "could not find method 'invok'");
     /// assert_eq!(label.severity(), Some(Severity::Error));
     /// ```
-    pub fn error(
-        source: Option<Arc<dyn Source>>,
-        range: impl Into<SpanRange>,
-        label: impl Into<String>,
-    ) -> Self {
+    pub fn error(source: Option<Arc<dyn Source>>, range: impl Into<SpanRange>, label: impl Into<String>) -> Self {
         Self {
             source,
             range: range.into(),
@@ -291,11 +285,7 @@ impl Label {
     /// assert_eq!(label.message(), "could not find method 'invok'");
     /// assert_eq!(label.severity(), Some(Severity::Warning));
     /// ```
-    pub fn warning(
-        source: Option<Arc<dyn Source>>,
-        range: impl Into<SpanRange>,
-        label: impl Into<String>,
-    ) -> Self {
+    pub fn warning(source: Option<Arc<dyn Source>>, range: impl Into<SpanRange>, label: impl Into<String>) -> Self {
         Self {
             source,
             range: range.into(),
@@ -324,11 +314,7 @@ impl Label {
     /// assert_eq!(label.message(), "could not find method 'invok'");
     /// assert_eq!(label.severity(), Some(Severity::Info));
     /// ```
-    pub fn info(
-        source: Option<Arc<dyn Source>>,
-        range: impl Into<SpanRange>,
-        label: impl Into<String>,
-    ) -> Self {
+    pub fn info(source: Option<Arc<dyn Source>>, range: impl Into<SpanRange>, label: impl Into<String>) -> Self {
         Self {
             source,
             range: range.into(),
@@ -357,11 +343,7 @@ impl Label {
     /// assert_eq!(label.message(), "could not find method 'invok'");
     /// assert_eq!(label.severity(), Some(Severity::Note));
     /// ```
-    pub fn note(
-        source: Option<Arc<dyn Source>>,
-        range: impl Into<SpanRange>,
-        label: impl Into<String>,
-    ) -> Self {
+    pub fn note(source: Option<Arc<dyn Source>>, range: impl Into<SpanRange>, label: impl Into<String>) -> Self {
         Self {
             source,
             range: range.into(),
@@ -390,11 +372,7 @@ impl Label {
     /// assert_eq!(label.message(), "could not find method 'invok'");
     /// assert_eq!(label.severity(), Some(Severity::Help));
     /// ```
-    pub fn help(
-        source: Option<Arc<dyn Source>>,
-        range: impl Into<SpanRange>,
-        label: impl Into<String>,
-    ) -> Self {
+    pub fn help(source: Option<Arc<dyn Source>>, range: impl Into<SpanRange>, label: impl Into<String>) -> Self {
         Self {
             source,
             range: range.into(),
@@ -517,6 +495,109 @@ impl Label {
         self.severity = Some(severity);
         self
     }
+
+    /// Reads a span of the source using the range within the
+    /// label itself, including a dynamic amount of context lines.
+    ///
+    /// # Examples
+    /// ```
+    /// use std::sync::Arc;
+    /// use error_snippet::{Label, Severity};
+    ///
+    /// let source = Arc::new(r#"fn main() -> int {
+    ///     let a = new Testing();
+    ///     let b = a.invok();
+    ///
+    ///     return 0;
+    /// }"#);
+    ///
+    /// let label = Label::new(Some(source.clone()), 58..67, String::new());
+    /// let span = label.read_span(None, 0).unwrap();
+    ///
+    /// assert_eq!(span.data, "    let b = a.invok();");
+    /// assert_eq!(span.start_line, 2);
+    /// assert_eq!(span.line, 2);
+    /// ```
+    pub fn read_span(&self, diagnostic: Option<&dyn Diagnostic>, context_lines: usize) -> Option<LabelSpan> {
+        let diag_source = diagnostic.and_then(|d| d.source_code());
+        let source = self.source.clone().or(diag_source)?;
+
+        let content = source.content();
+        let range = self.range().0.clone();
+
+        let mut line_start = 0;
+        let mut line_spans = Vec::new();
+
+        for line in content.lines() {
+            let line_len = line.len();
+            let span = line_start..(line_start + line_len);
+
+            line_spans.push(span);
+
+            // +1 for '\n' (assuming UNIX-style newlines)
+            line_start += line_len + 1;
+        }
+
+        // Determine the lines that intersect with the byte range
+        let mut matching_lines = Vec::new();
+        for (i, span) in line_spans.iter().enumerate() {
+            if span.end > range.start && span.start < range.end {
+                matching_lines.push(i);
+            }
+        }
+
+        // If the range is outside the span of the input string,
+        // we return the first context window of the string as a fallback.
+        if matching_lines.is_empty() {
+            // Get the end of the context window, if possible.
+            // Otherwise, just return the entire string.
+            let last_line_span = line_spans.get(context_lines * 2 + 1).or_else(|| line_spans.last());
+
+            let last_line_idx = last_line_span.map(|s| s.end).unwrap_or_default();
+
+            return Some(LabelSpan {
+                data: content[0..last_line_idx].to_string(),
+                start_line: context_lines,
+                line: 0,
+            });
+        }
+
+        let first_matching_line = *matching_lines.first().unwrap();
+
+        let first_match = first_matching_line.saturating_sub(context_lines);
+        let last_match = (matching_lines.last().unwrap() + context_lines).min(line_spans.len() - 1);
+
+        let start_byte = line_spans[first_match].start;
+        let end_byte = line_spans[last_match].end;
+
+        Some(LabelSpan {
+            data: content[start_byte..end_byte].to_string(),
+            start_line: first_matching_line,
+            line: first_match,
+        })
+    }
+}
+
+/// Represents a span within a label.
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub struct LabelSpan {
+    /// Defines the string inside the associated span.
+    pub data: String,
+
+    /// Defines the zero-indexed line in the associated source, where the span
+    /// starts (including context lines).
+    pub line: usize,
+
+    /// Defines the zero-indexed line in the associated source, where the span
+    /// starts (excluding context lines).
+    pub start_line: usize,
+}
+
+impl LabelSpan {
+    /// Gets the line count in the span.
+    pub fn line_count(&self) -> usize {
+        self.data.lines().count()
+    }
 }
 
 /// Represents a suggested fix with a source file attached.
@@ -529,16 +610,10 @@ pub enum Suggestion {
     Deletion { range: SourceRange },
 
     /// Defines some string should be inserted at some position within a file.
-    Insertion {
-        location: SourceLocation,
-        value: String,
-    },
+    Insertion { location: SourceLocation, value: String },
 
     /// Defines some span within a file should be replaced.
-    Replacement {
-        range: SourceRange,
-        replacement: String,
-    },
+    Replacement { range: SourceRange, replacement: String },
 }
 
 impl Suggestion {
@@ -754,9 +829,7 @@ impl std::fmt::Display for Box<dyn Diagnostic + Send + Sync + 'static> {
     }
 }
 
-impl<T: Diagnostic + Send + Sync + 'static> From<T>
-    for Box<dyn Diagnostic + Send + Sync + 'static>
-{
+impl<T: Diagnostic + Send + Sync + 'static> From<T> for Box<dyn Diagnostic + Send + Sync + 'static> {
     fn from(value: T) -> Self {
         Box::new(value)
     }
@@ -1181,9 +1254,7 @@ impl Diagnostic for SourceWrapped {
     }
 
     fn source_code(&self) -> Option<Arc<dyn Source>> {
-        self.diagnostic
-            .source_code()
-            .or_else(|| Some(self.source.clone()))
+        self.diagnostic.source_code().or_else(|| Some(self.source.clone()))
     }
 }
 

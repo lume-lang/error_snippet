@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use error_snippet::{
-    GraphicalRenderer, Help, Label, NamedSource, Renderer, Severity, SimpleDiagnostic,
-    SourceLocation, Suggestion,
+    GraphicalRenderer, Help, Label, NamedSource, Renderer, Severity, SimpleDiagnostic, SourceLocation, Suggestion,
 };
 
 fn main() {
@@ -52,7 +51,7 @@ class builtin Array<T>
         .with_severity(Severity::Error)
         .with_label(Label::error(
             Some(source.clone()),
-            1198..1212,
+            1198..1209,
             "expected `Array<T>`, found `Boolean`",
         ))
         .with_label(Label::note(
@@ -68,5 +67,6 @@ class builtin Array<T>
         );
 
     let mut renderer = GraphicalRenderer::new();
+    renderer.highlight_source = true;
     renderer.render_stderr(&message).unwrap();
 }
