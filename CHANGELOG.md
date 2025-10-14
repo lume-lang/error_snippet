@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.23](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.22...error_snippet-v0.1.23) - 2025-10-14
+
+### Fixed
+
+- always use blank style on colors are disabled
+
 ## [0.1.22](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.21...error_snippet-v0.1.22) - 2025-10-14
 
 ### Fixed
