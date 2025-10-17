@@ -21,7 +21,6 @@ exclude = ["examples/*.png"]
 [dependencies]
 error_snippet_derive = { path = "error_snippet_derive", version = "=0.1.9", optional = true }
 
-fxhash = { version = "^0.2", optional = true }
 indexmap = { version = "^2" }
 owo-colors = { version = "^4.0.0", features = ["supports-colors"] }
 terminal_size = { version = "^0.4", optional = true }
@@ -31,10 +30,9 @@ insta = "=1.43.1"
 trybuild = "=1.0.104"
 
 [features]
-default = ["derive", "colored-args"]
+default = ["derive"]
 derive = ["dep:error_snippet_derive"]
 termsize = ["dep:terminal_size"]
-colored-args = ["derive", "dep:fxhash"]
 
 [workspace]
 members = ["error_snippet_derive", "fuzz"]
