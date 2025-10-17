@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.23...error_snippet-v0.2.0) - 2025-10-17
+
+### Fixed
+
+- remove `colored-args` feature
+
 ## [0.1.23](https://github.com/lume-lang/error_snippet/compare/error_snippet-v0.1.22...error_snippet-v0.1.23) - 2025-10-14
 
 ### Fixed
